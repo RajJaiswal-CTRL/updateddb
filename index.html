@@ -1,255 +1,1688 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Universal CSV Dashboard</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
-body {
-    margin:0;
-    padding:20px;
-    font-family: Arial, sans-serif;
-    background:#0f172a;
-    color:#e5e7eb;
-}
-h1 { color:#a78bfa }
-.card {
-    background:#111827;
-    padding:16px;
-    border-radius:14px;
-    margin-bottom:20px;
-}
-.grid {
-    display:grid;
-    grid-template-columns: repeat(auto-fit,minmax(280px,1fr));
-    gap:16px;
-}
-input, select {
-    padding:8px;
-    background:#020617;
-    border:1px solid #1f2937;
-    color:#e5e7eb;
-    border-radius:8px;
-}
-table {
-    width:100%;
-    border-collapse:collapse;
-}
-th, td {
-    padding:10px;
-    border-bottom:1px solid #1f2937;
-}
-th {
-    background:#1f2937;
-    position:sticky;
-    top:0;
-}
-canvas { max-height:260px }
-.badge {
-    padding:4px 10px;
-    border-radius:999px;
-    font-size:12px;
-    background:#334155;
-}
-</style>
-</head>
-
-<body>
-
-<h1>📊 Universal CSV Dashboard</h1>
-
-<div class="card">
-    <input type="file" id="fileInput" accept=".csv">
-</div>
-
-<div class="card grid" id="filters"></div>
-
-<div class="grid" id="stats"></div>
-<div class="grid" id="charts"></div>
-
-<div class="card">
-    <input type="text" placeholder="Search all data..." onkeyup="searchTable(this.value)">
-    <div style="max-height:420px;overflow:auto;margin-top:10px">
-        <table id="dataTable"></table>
-    </div>
-</div>
-
-<script>
-let rawData = [];
-let filteredData = [];
-let columns = [];
-let visibleColumns = new Set();
-let dateColumns = [];
-
-document.getElementById("fileInput").addEventListener("change", e => {
-    const reader = new FileReader();
-    reader.onload = () => parseCSV(reader.result);
-    reader.readAsText(e.target.files[0]);
-});
-
-function parseCSV(text) {
-    const lines = text.trim().split("\n");
-    columns = lines[0].split(",").map(h => h.trim());
-    visibleColumns = new Set(columns);
-
-    rawData = lines.slice(1).map(line => {
-        const values = line.split(",");
-        const obj = {};
-        columns.forEach((c,i) => obj[c] = values[i]?.trim() || "");
-        return obj;
-    });
-
-    filteredData = [...rawData];
-    detectDateColumns();
-    renderFilters();
-    renderStats();
-    renderCharts();
-    renderTable(filteredData);
-}
-
-function isNumeric(col) {
-    return rawData.filter(r => r[col] && !isNaN(r[col])).length > rawData.length * 0.6;
-}
-
-function isDate(col) {
-    return rawData.filter(r => /\d{4}-\d{2}-\d{2}/.test(r[col])).length > rawData.length * 0.6;
-}
-
-function detectDateColumns() {
-    dateColumns = columns.filter(c => isDate(c));
-}
-
-function renderFilters() {
-    const filters = document.getElementById("filters");
-    filters.innerHTML = "";
-
-    // Column visibility
-    const colCard = document.createElement("div");
-    colCard.className = "card";
-    colCard.innerHTML = `<h3>🧩 Columns</h3>`;
-    columns.forEach(c => {
-        colCard.innerHTML += `
-            <label>
-                <input type="checkbox" checked onchange="toggleColumn('${c}')">
-                ${c}
-            </label><br>
-        `;
-    });
-    filters.appendChild(colCard);
-
-    // Date filter (auto)
-    if (dateColumns.length) {
-        const d = dateColumns[0];
-        const dateCard = document.createElement("div");
-        dateCard.className = "card";
-        dateCard.innerHTML = `
-            <h3>📅 Date Filter (${d})</h3>
-            <input type="date" id="fromDate">
-            <input type="date" id="toDate">
-            <button onclick="applyDateFilter('${d}')">Apply</button>
-        `;
-        filters.appendChild(dateCard);
-    }
-}
-
-function toggleColumn(col) {
-    visibleColumns.has(col) ? visibleColumns.delete(col) : visibleColumns.add(col);
-    renderTable(filteredData);
-}
-
-function applyDateFilter(col) {
-    const from = document.getElementById("fromDate").value;
-    const to = document.getElementById("toDate").value;
-
-    filteredData = rawData.filter(r => {
-        if (!r[col]) return false;
-        return (!from || r[col] >= from) && (!to || r[col] <= to);
-    });
-
-    renderStats();
-    renderCharts();
-    renderTable(filteredData);
-}
-
-function renderStats() {
-    const stats = document.getElementById("stats");
-    stats.innerHTML = "";
-
-    columns.forEach(col => {
-        if (isNumeric(col)) {
-            const nums = filteredData.map(r => parseFloat(r[col])).filter(n => !isNaN(n));
-            if (!nums.length) return;
-            const avg = (nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(2);
-            stats.innerHTML += `
-                <div class="card">
-                    <h3>${col}</h3>
-                    <p class="badge">Average: ${avg}</p>
-                </div>
-            `;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Data Dashboard - Auto-Detect & Custom Views</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-    });
-}
 
-function renderCharts() {
-    const charts = document.getElementById("charts");
-    charts.innerHTML = "";
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #0a0e27;
+            color: #e4e4e7;
+            padding: 20px;
+            min-height: 100vh;
+        }
 
-    columns.forEach(col => {
-        if (!isNumeric(col) && !isDate(col)) {
-            const counts = {};
-            filteredData.forEach(r => {
-                if (r[col]) counts[r[col]] = (counts[r[col]] || 0) + 1;
-            });
+        .container {
+            max-width: 1900px;
+            margin: 0 auto;
+        }
 
-            const keys = Object.keys(counts);
-            if (keys.length > 1 && keys.length <= 15) {
-                const id = "chart_" + col.replace(/\W/g,"");
-                charts.innerHTML += `
-                    <div class="card">
-                        <h3>${col}</h3>
-                        <canvas id="${id}"></canvas>
-                    </div>
-                `;
-                new Chart(document.getElementById(id), {
-                    type: keys.length <= 6 ? "doughnut" : "bar",
-                    data: {
-                        labels: keys,
-                        datasets: [{ data: Object.values(counts) }]
-                    }
-                });
+        header {
+            background: linear-gradient(135deg, #1a1f3a 0%, #2a1f3d 100%);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        h1 {
+            color: #a78bfa;
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 0 30px rgba(167,139,250,0.5);
+        }
+
+        .subtitle {
+            color: #9ca3af;
+            font-size: 1.2em;
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .upload-card {
+            background: linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(99,102,241,0.1) 100%);
+            border: 2px solid rgba(139,92,246,0.3);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-card:hover {
+            border-color: #a78bfa;
+            background: linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(99,102,241,0.15) 100%);
+            transform: translateY(-5px);
+        }
+
+        .upload-card.dragover {
+            border-color: #8b5cf6;
+            background: rgba(139,92,246,0.2);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .upload-title {
+            font-size: 1.3em;
+            color: #d1d5db;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .upload-description {
+            color: #9ca3af;
+            font-size: 0.95em;
+        }
+
+        .toolbar {
+            background: rgba(26,31,58,0.8);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(139,92,246,0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139,92,246,0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #e4e4e7;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(99,102,241,0.1) 100%);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(139,92,246,0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #8b5cf6, #6366f1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(139,92,246,0.3);
+            border-color: rgba(139,92,246,0.5);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a78bfa 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: #9ca3af;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .dashboard-builder {
+            background: rgba(26,31,58,0.8);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .builder-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .builder-title {
+            font-size: 1.5em;
+            color: #a78bfa;
+            font-weight: 700;
+        }
+
+        .widget-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .widget-option {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(139,92,246,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .widget-option:hover {
+            background: rgba(139,92,246,0.1);
+            border-color: rgba(139,92,246,0.6);
+            transform: translateY(-2px);
+        }
+
+        .widget-option.selected {
+            background: rgba(139,92,246,0.2);
+            border-color: #8b5cf6;
+        }
+
+        .widget-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .widget-name {
+            font-size: 1.1em;
+            color: #d1d5db;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .widget-desc {
+            font-size: 0.85em;
+            color: #9ca3af;
+        }
+
+        .custom-views {
+            display: grid;
+            gap: 30px;
+        }
+
+        .view-section {
+            background: rgba(26,31,58,0.6);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        .view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .view-title {
+            font-size: 1.3em;
+            color: #e4e4e7;
+            font-weight: 600;
+        }
+
+        .view-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #e4e4e7;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.1em;
+        }
+
+        .icon-btn:hover {
+            background: rgba(139,92,246,0.3);
+            transform: scale(1.05);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: rgba(26,31,58,0.6);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .chart-title {
+            font-size: 1.3em;
+            color: #e4e4e7;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .table-container {
+            background: rgba(26,31,58,0.6);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .search-box {
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(167,139,250,0.3);
+            border-radius: 10px;
+            font-size: 1em;
+            color: #e4e4e7;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 20px rgba(139,92,246,0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            background: linear-gradient(135deg, rgba(139,92,246,0.3) 0%, rgba(99,102,241,0.3) 100%);
+            color: #e4e4e7;
+            padding: 18px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: sticky;
+            top: 0;
+            border-bottom: 2px solid rgba(139,92,246,0.5);
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: #d1d5db;
+        }
+
+        tr:hover {
+            background: rgba(139,92,246,0.1);
+        }
+
+        .scroll-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .scroll-container::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .scroll-container::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
+        }
+
+        .scroll-container::-webkit-scrollbar-thumb {
+            background: rgba(139,92,246,0.5);
+            border-radius: 5px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+            display: none;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification.success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .notification.error { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .notification.info { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .notification.warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+
+        .hidden { display: none !important; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1f3a 0%, #2a1f3d 100%);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 1000px;
+            width: 95%;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #a78bfa;
+            font-weight: 700;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #9ca3af;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        input[type="text"], input[type="url"], input[type="number"], select, textarea {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(167,139,250,0.4);
+            color: #e4e4e7;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            width: 100%;
+            font-size: 1em;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 10px rgba(139,92,246,0.3);
+        }
+
+        input[type="file"] { display: none; }
+
+        .file-info {
+            background: rgba(99,102,241,0.1);
+            border: 1px solid rgba(99,102,241,0.3);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-right: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 16px;
+            background: rgba(139,92,246,0.2);
+            border: 1px solid rgba(139,92,246,0.4);
+            color: #c4b5fd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: rgba(139,92,246,0.3);
+            border-color: rgba(139,92,246,0.6);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .pagination span {
+            color: #9ca3af;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #6366f1);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .help-text {
+            color: #9ca3af;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        .column-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .column-item {
+            background: rgba(255,255,255,0.05);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(139,92,246,0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .column-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #8b5cf6;
+        }
+
+        .column-item label {
+            cursor: pointer;
+            color: #d1d5db;
+            font-size: 0.9em;
+            flex: 1;
+        }
+
+        .detection-info {
+            background: rgba(16,185,129,0.1);
+            border: 1px solid rgba(16,185,129,0.3);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .detection-info h4 {
+            color: #10b981;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .detection-detail {
+            color: #9ca3af;
+            font-size: 0.9em;
+            margin: 5px 0;
+        }
+
+        .filter-group {
+            background: rgba(255,255,255,0.03);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(139,92,246,0.2);
+            margin-bottom: 20px;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: 200px 150px 1fr 50px;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid, .upload-options { grid-template-columns: 1fr; }
+            h1 { font-size: 2em; }
+            .filter-row {
+                grid-template-columns: 1fr;
             }
         }
-    });
-}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Smart Data Dashboard</h1>
+            <p class="subtitle">Auto-Detect Formatted Sheets • Custom Table Builder • Dynamic Visualizations</p>
+        </header>
 
-function renderTable(data) {
-    const table = document.getElementById("dataTable");
-    const cols = [...visibleColumns];
+        <div id="uploadSection">
+            <div class="upload-options">
+                <div class="upload-card" id="fileUploadCard">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-title">Upload File</div>
+                    <div class="upload-description">Auto-detect CSV/Excel format</div>
+                    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
+                </div>
+                
+                <div class="upload-card" onclick="openGoogleSheetsModal()">
+                    <div class="upload-icon">📊</div>
+                    <div class="upload-title">Connect Google Sheets</div>
+                    <div class="upload-description">Live data sync</div>
+                </div>
+            </div>
+        </div>
 
-    table.innerHTML = `
-        <thead>
-            <tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr>
-        </thead>
-        <tbody>
-            ${data.map(r =>
-                `<tr>${cols.map(c => `<td>${r[c] || "-"}</td>`).join("")}</tr>`
-            ).join("")}
-        </tbody>
-    `;
-}
+        <div id="dashboardSection" class="hidden">
+            <div class="toolbar">
+                <div class="file-info" id="fileInfo">
+                    <span>📄</span>
+                    <span class="file-info-text" id="fileName">No file loaded</span>
+                </div>
+                <button class="btn btn-primary" onclick="uploadNew()">📤 New Upload</button>
+                <button class="btn btn-warning" onclick="openDashboardBuilder()">🎨 Build Dashboard</button>
+                <button class="btn btn-secondary" onclick="openTableBuilder()">📋 Create Table</button>
+                <button class="btn btn-success" onclick="exportToCSV()">📥 Export</button>
+                <button class="btn btn-secondary" onclick="refreshData()">🔄 Refresh</button>
+                <button class="btn btn-danger" onclick="clearData()">🗑️ Clear</button>
+            </div>
 
-function searchTable(term) {
-    term = term.toLowerCase();
-    filteredData = rawData.filter(r =>
-        columns.some(c => String(r[c]).toLowerCase().includes(term))
-    );
-    renderStats();
-    renderCharts();
-    renderTable(filteredData);
-}
-</script>
+            <div id="statsContainer"></div>
+            <div id="customViewsContainer"></div>
+        </div>
+    </div>
 
+    <!-- Dashboard Builder Modal -->
+    <div id="dashboardBuilderModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-header">🎨 Dashboard Builder</h2>
+            <p style="color: #9ca3af; margin-bottom: 25px;">
+                Select which visualizations and statistics you want to display
+            </p>
+            
+            <h3 style="color: #a78bfa; margin-bottom: 15px;">📊 Charts & Visualizations</h3>
+            <div class="widget-selector" id="chartWidgets"></div>
+
+            <h3 style="color: #a78bfa; margin-bottom: 15px; margin-top: 25px;">📈 Statistics</h3>
+            <div class="widget-selector" id="statWidgets"></div>
+
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button class="btn btn-primary" style="flex: 1;" onclick="applyDashboardConfig()">✓ Apply Dashboard</button>
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closeDashboardBuilder()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Builder Modal -->
+    <div id="tableBuilderModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-header">📋 Custom Table Builder</h2>
+            
+            <div class="form-group">
+                <label>Table Name</label>
+                <input type="text" id="tableName" placeholder="e.g., Sales Summary">
+            </div>
+
+            <div class="form-group">
+                <label>Select Columns to Include</label>
+                <div class="column-list" id="tableColumnList"></div>
+            </div>
+
+            <div class="filter-group">
+                <h4 style="color: #a78bfa; margin-bottom: 15px;">🔍 Filters (Optional)</h4>
+                <div id="filterContainer"></div>
+                <button class="btn btn-secondary" onclick="addFilter()" style="margin-top: 10px;">+ Add Filter</button>
+            </div>
+
+            <div class="form-group">
+                <label>Sort By</label>
+                <select id="tableSortColumn">
+                    <option value="">None</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Sort Order</label>
+                <select id="tableSortOrder">
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button class="btn btn-primary" style="flex: 1;" onclick="createCustomTable()">✓ Create Table</button>
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closeTableBuilder()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Sheets Modal -->
+    <div id="googleSheetsModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-header">Connect Google Sheets</h2>
+            <div class="form-group">
+                <label>Google Sheets URL</label>
+                <input type="url" id="sheetsUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+                <div class="help-text">
+                    <strong>Setup Instructions:</strong><br>
+                    1. Open your Google Sheet<br>
+                    2. Click "File" → "Share" → "Publish to web"<br>
+                    3. Choose "Comma-separated values (.csv)" format<br>
+                    4. Click "Publish" and copy the link<br>
+                    5. Paste the link above
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Auto-refresh Interval (minutes)</label>
+                <select id="refreshInterval">
+                    <option value="0">Manual only</option>
+                    <option value="1">Every 1 minute</option>
+                    <option value="5" selected>Every 5 minutes</option>
+                    <option value="10">Every 10 minutes</option>
+                    <option value="30">Every 30 minutes</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button class="btn btn-primary" style="flex: 1;" onclick="connectGoogleSheets()">Connect</button>
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <h2 class="modal-header">Processing Data...</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <p id="loadingText" style="color: #9ca3af; margin-top: 15px;">Loading...</p>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        let rawData = [];
+        let displayData = [];
+        let columns = [];
+        let charts = {};
+        let currentFileName = '';
+        let refreshIntervalId = null;
+        let isGoogleSheets = false;
+        let sheetsUrl = '';
+        let customTables = [];
+        let dashboardConfig = {
+            charts: [],
+            stats: []
+        };
+        let detectedFormat = null;
+
+        // File upload handling
+        const fileUploadCard = document.getElementById('fileUploadCard');
+        const fileInput = document.getElementById('fileInput');
+
+        fileUploadCard.addEventListener('click', () => fileInput.click());
+        fileUploadCard.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadCard.classList.add('dragover');
+        });
+        fileUploadCard.addEventListener('dragleave', () => {
+            fileUploadCard.classList.remove('dragover');
+        });
+        fileUploadCard.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadCard.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFile(files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+        });
+
+        function showLoading(message = 'Processing...') {
+            document.getElementById('loadingModal').classList.add('active');
+            document.getElementById('loadingText').textContent = message;
+            document.getElementById('progressFill').style.width = '0%';
+        }
+
+        function updateProgress(percent, message) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            if (message) document.getElementById('loadingText').textContent = message;
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingModal').classList.remove('active');
+        }
+
+        async function handleFile(file) {
+            currentFileName = file.name;
+            isGoogleSheets = false;
+            const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+            
+            showLoading(`Analyzing ${fileSize}MB file...`);
+            updateProgress(20, 'Detecting format...');
+            
+            const reader = new FileReader();
+            
+            if (file.name.endsWith('.csv')) {
+                reader.onload = async (e) => {
+                    updateProgress(50, 'Parsing CSV...');
+                    const text = e.target.result;
+                    await smartParseCSV(text);
+                };
+                reader.readAsText(file);
+            } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                reader.onload = async (e) => {
+                    updateProgress(50, 'Parsing Excel...');
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { 
+                        type: 'array',
+                        cellDates: true,
+                        cellNF: false,
+                        cellText: false
+                    });
+                    await smartParseExcel(workbook);
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        async function smartParseCSV(csv) {
+            updateProgress(60, 'Auto-detecting structure...');
+            
+            const lines = csv.trim().split('\n');
+            if (lines.length < 2) {
+                hideLoading();
+                showNotification('File must have at least a header row and one data row', 'error');
+                return;
+            }
+
+            // Smart header detection
+            const detectionResult = detectDataStructure(lines);
+            detectedFormat = detectionResult;
+            
+            updateProgress(70, 'Extracting data...');
+            
+            const headerLine = lines[detectionResult.headerRow];
+            columns = parseCSVLine(headerLine).map(col => cleanValue(col));
+            
+            rawData = [];
+            const dataLines = lines.slice(detectionResult.dataStartRow);
+            
+            const chunkSize = 1000;
+            for (let i = 0; i < dataLines.length; i += chunkSize) {
+                const chunk = dataLines.slice(i, i + chunkSize);
+                chunk.forEach(line => {
+                    if (line.trim()) {
+                        const values = parseCSVLine(line);
+                        const record = {};
+                        let hasData = false;
+                        
+                        columns.forEach((col, index) => {
+                            const value = cleanValue(values[index]);
+                            record[col] = value;
+                            if (value) hasData = true;
+                        });
+                        
+                        if (hasData) rawData.push(record);
+                    }
+                });
+                
+                const progress = 70 + (i / dataLines.length) * 20;
+                updateProgress(progress, `Processed ${Math.min(i + chunkSize, dataLines.length)} / ${dataLines.length} rows`);
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+
+            updateProgress(95, 'Finalizing...');
+            await initializeDashboard();
+            updateProgress(100, 'Complete!');
+            setTimeout(hideLoading, 500);
+        }
+
+        async function smartParseExcel(workbook) {
+            updateProgress(60, 'Auto-detecting Excel structure...');
+            
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            // Convert to array of arrays
+            const sheetData = XLSX.utils.sheet_to_json(worksheet, { 
+                header: 1,
+                raw: false,
+                defval: ''
+            });
+            
+            if (sheetData.length < 2) {
+                hideLoading();
+                showNotification('Sheet must have at least a header row and one data row', 'error');
+                return;
+            }
+
+            // Smart detection
+            const detectionResult = detectDataStructure(sheetData.map(row => row.join(',')));
+            detectedFormat = detectionResult;
+            
+            updateProgress(70, 'Extracting columns and data...');
+            
+            const headerRow = sheetData[detectionResult.headerRow];
+            columns = headerRow.map(col => cleanValue(col)).filter(col => col);
+            
+            rawData = [];
+            const dataRows = sheetData.slice(detectionResult.dataStartRow);
+            
+            const chunkSize = 1000;
+            for (let i = 0; i < dataRows.length; i += chunkSize) {
+                const chunk = dataRows.slice(i, i + chunkSize);
+                
+                chunk.forEach(row => {
+                    const record = {};
+                    let hasData = false;
+                    
+                    columns.forEach((col, index) => {
+                        const value = cleanValue(row[index]);
+                        record[col] = value;
+                        if (value) hasData = true;
+                    });
+                    
+                    if (hasData) rawData.push(record);
+                });
+                
+                const progress = 70 + (i / dataRows.length) * 20;
+                updateProgress(progress, `Processed ${Math.min(i + chunkSize, dataRows.length)} / ${dataRows.length} rows`);
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+
+            updateProgress(95, 'Finalizing...');
+            await initializeDashboard();
+            updateProgress(100, 'Complete!');
+            setTimeout(hideLoading, 500);
+        }
+
+        function detectDataStructure(lines) {
+            // Smart detection algorithm
+            let headerRow = 0;
+            let dataStartRow = 1;
+            
+            // Check first 10 rows for patterns
+            const sampleSize = Math.min(10, lines.length);
+            const rowAnalysis = [];
+            
+            for (let i = 0; i < sampleSize; i++) {
+                const cells = typeof lines[i] === 'string' ? parseCSVLine(lines[i]) : lines[i];
+                
+                // Count non-empty cells
+                const nonEmpty = cells.filter(cell => cell && String(cell).trim()).length;
+                
+                // Check if mostly text (likely header)
+                const textCells = cells.filter(cell => {
+                    const str = String(cell).trim();
+                    return str && isNaN(str) && !isDateLike(str);
+                }).length;
+                
+                // Check if has numbers (likely data)
+                const numberCells = cells.filter(cell => {
+                    const str = String(cell).trim();
+                    return str && !isNaN(str);
+                }).length;
+                
+                rowAnalysis.push({
+                    index: i,
+                    nonEmpty,
+                    textCells,
+                    numberCells,
+                    percentText: textCells / nonEmpty,
+                    percentNumber: numberCells / nonEmpty
+                });
+            }
+            
+            // Find header: row with high text percentage
+            const headerCandidates = rowAnalysis.filter(r => r.percentText > 0.5 && r.nonEmpty > 2);
+            if (headerCandidates.length > 0) {
+                headerRow = headerCandidates[0].index;
+                dataStartRow = headerRow + 1;
+            }
+            
+            // Skip empty rows after header
+            for (let i = dataStartRow; i < sampleSize; i++) {
+                const cells = typeof lines[i] === 'string' ? parseCSVLine(lines[i]) : lines[i];
+                const nonEmpty = cells.filter(cell => cell && String(cell).trim()).length;
+                if (nonEmpty > 0) {
+                    dataStartRow = i;
+                    break;
+                }
+            }
+            
+            return {
+                headerRow,
+                dataStartRow,
+                totalRows: lines.length,
+                confidence: headerCandidates.length > 0 ? 'high' : 'medium'
+            };
+        }
+
+        function isDateLike(str) {
+            return /\d{1,4}[-/]\d{1,2}[-/]\d{1,4}/.test(str);
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                const nextChar = line[i + 1];
+                
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        function cleanValue(value) {
+            if (value === null || value === undefined || value === '') return '';
+            
+            let cleaned = String(value).trim();
+            cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+            
+            if (cleaned.startsWith('="') && cleaned.endsWith('"')) {
+                cleaned = cleaned.slice(2, -1);
+            }
+            
+            return cleaned;
+        }
+
+        async function initializeDashboard() {
+            document.getElementById('uploadSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            document.getElementById('fileName').textContent = currentFileName;
+            
+            displayData = rawData;
+            
+            // Show detection info
+            if (detectedFormat) {
+                showNotification(
+                    `Auto-detected: Header at row ${detectedFormat.headerRow + 1}, Data from row ${detectedFormat.dataStartRow + 1}. Loaded ${rawData.length.toLocaleString()} records.`,
+                    'success'
+                );
+            }
+            
+            renderDefaultDashboard();
+        }
+
+        function renderDefaultDashboard() {
+            const statsContainer = document.getElementById('statsContainer');
+            statsContainer.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">${rawData.length.toLocaleString()}</div>
+                        <div class="stat-label">Total Records</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${columns.length}</div>
+                        <div class="stat-label">Columns</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${customTables.length}</div>
+                        <div class="stat-label">Custom Tables</div>
+                    </div>
+                </div>
+            `;
+            
+            renderCustomViews();
+        }
+
+        function openDashboardBuilder() {
+            document.getElementById('dashboardBuilderModal').classList.add('active');
+            populateDashboardBuilder();
+        }
+
+        function populateDashboardBuilder() {
+            const chartWidgets = document.getElementById('chartWidgets');
+            const statWidgets = document.getElementById('statWidgets');
+            
+            // Chart options for categorical columns
+            const categoricalCols = columns.filter(col => {
+                const values = displayData.map(r => r[col]).filter(v => v);
+                const unique = new Set(values);
+                return unique.size > 1 && unique.size <= 20;
+            });
+            
+            chartWidgets.innerHTML = categoricalCols.map(col => `
+                <div class="widget-option" onclick="toggleWidget('chart', '${col}')" id="chart_${col}">
+                    <div class="widget-icon">📊</div>
+                    <div class="widget-name">${col}</div>
+                    <div class="widget-desc">Distribution chart</div>
+                </div>
+            `).join('');
+            
+            // Stat options for numeric columns
+            const numericCols = columns.filter(col => {
+                const values = displayData.map(r => r[col]).filter(v => v && !isNaN(v));
+                return values.length > displayData.length * 0.5;
+            });
+            
+            statWidgets.innerHTML = numericCols.map(col => `
+                <div class="widget-option" onclick="toggleWidget('stat', '${col}')" id="stat_${col}">
+                    <div class="widget-icon">📈</div>
+                    <div class="widget-name">${col}</div>
+                    <div class="widget-desc">Summary statistics</div>
+                </div>
+            `).join('');
+            
+            // Pre-select existing config
+            dashboardConfig.charts.forEach(col => {
+                const elem = document.getElementById(`chart_${col}`);
+                if (elem) elem.classList.add('selected');
+            });
+            dashboardConfig.stats.forEach(col => {
+                const elem = document.getElementById(`stat_${col}`);
+                if (elem) elem.classList.add('selected');
+            });
+        }
+
+        function toggleWidget(type, column) {
+            const elem = document.getElementById(`${type}_${column}`);
+            elem.classList.toggle('selected');
+        }
+
+        function applyDashboardConfig() {
+            dashboardConfig.charts = [];
+            dashboardConfig.stats = [];
+            
+            document.querySelectorAll('#chartWidgets .widget-option.selected').forEach(elem => {
+                const col = elem.id.replace('chart_', '');
+                dashboardConfig.charts.push(col);
+            });
+            
+            document.querySelectorAll('#statWidgets .widget-option.selected').forEach(elem => {
+                const col = elem.id.replace('stat_', '');
+                dashboardConfig.stats.push(col);
+            });
+            
+            closeDashboardBuilder();
+            renderCustomViews();
+            showNotification('Dashboard updated!', 'success');
+        }
+
+        function closeDashboardBuilder() {
+            document.getElementById('dashboardBuilderModal').classList.remove('active');
+        }
+
+        function openTableBuilder() {
+            document.getElementById('tableBuilderModal').classList.add('active');
+            populateTableBuilder();
+        }
+
+        function populateTableBuilder() {
+            const columnList = document.getElementById('tableColumnList');
+            const sortColumn = document.getElementById('tableSortColumn');
+            
+            columnList.innerHTML = columns.map(col => `
+                <div class="column-item">
+                    <input type="checkbox" id="col_${col}" checked>
+                    <label for="col_${col}">${col}</label>
+                </div>
+            `).join('');
+            
+            sortColumn.innerHTML = '<option value="">None</option>' + 
+                columns.map(col => `<option value="${col}">${col}</option>`).join('');
+            
+            document.getElementById('filterContainer').innerHTML = '';
+        }
+
+        function addFilter() {
+            const container = document.getElementById('filterContainer');
+            const filterId = 'filter_' + Date.now();
+            
+            const filterRow = document.createElement('div');
+            filterRow.className = 'filter-row';
+            filterRow.id = filterId;
+            filterRow.innerHTML = `
+                <select class="filter-column">
+                    ${columns.map(col => `<option value="${col}">${col}</option>`).join('')}
+                </select>
+                <select class="filter-operator">
+                    <option value="equals">Equals</option>
+                    <option value="contains">Contains</option>
+                    <option value="startsWith">Starts with</option>
+                    <option value="endsWith">Ends with</option>
+                    <option value="greaterThan">Greater than</option>
+                    <option value="lessThan">Less than</option>
+                </select>
+                <input type="text" class="filter-value" placeholder="Filter value">
+                <button class="icon-btn" onclick="removeFilter('${filterId}')">🗑️</button>
+            `;
+            
+            container.appendChild(filterRow);
+        }
+
+        function removeFilter(filterId) {
+            document.getElementById(filterId).remove();
+        }
+
+        function createCustomTable() {
+            const tableName = document.getElementById('tableName').value.trim() || 'Custom Table';
+            
+            // Get selected columns
+            const selectedColumns = [];
+            columns.forEach(col => {
+                const checkbox = document.getElementById(`col_${col}`);
+                if (checkbox && checkbox.checked) {
+                    selectedColumns.push(col);
+                }
+            });
+            
+            if (selectedColumns.length === 0) {
+                showNotification('Please select at least one column', 'error');
+                return;
+            }
+            
+            // Get filters
+            const filters = [];
+            document.querySelectorAll('.filter-row').forEach(row => {
+                const column = row.querySelector('.filter-column').value;
+                const operator = row.querySelector('.filter-operator').value;
+                const value = row.querySelector('.filter-value').value;
+                if (value) {
+                    filters.push({ column, operator, value });
+                }
+            });
+            
+            // Get sort
+            const sortColumn = document.getElementById('tableSortColumn').value;
+            const sortOrder = document.getElementById('tableSortOrder').value;
+            
+            // Apply filters
+            let filteredData = [...displayData];
+            filters.forEach(filter => {
+                filteredData = filteredData.filter(record => {
+                    const cellValue = String(record[filter.column]).toLowerCase();
+                    const filterValue = filter.value.toLowerCase();
+                    
+                    switch (filter.operator) {
+                        case 'equals': return cellValue === filterValue;
+                        case 'contains': return cellValue.includes(filterValue);
+                        case 'startsWith': return cellValue.startsWith(filterValue);
+                        case 'endsWith': return cellValue.endsWith(filterValue);
+                        case 'greaterThan': return parseFloat(cellValue) > parseFloat(filterValue);
+                        case 'lessThan': return parseFloat(cellValue) < parseFloat(filterValue);
+                        default: return true;
+                    }
+                });
+            });
+            
+            // Apply sort
+            if (sortColumn) {
+                filteredData.sort((a, b) => {
+                    const aVal = a[sortColumn];
+                    const bVal = b[sortColumn];
+                    
+                    if (!isNaN(aVal) && !isNaN(bVal)) {
+                        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+                    }
+                    
+                    const compare = String(aVal).localeCompare(String(bVal));
+                    return sortOrder === 'asc' ? compare : -compare;
+                });
+            }
+            
+            // Create table object
+            const customTable = {
+                id: 'table_' + Date.now(),
+                name: tableName,
+                columns: selectedColumns,
+                data: filteredData,
+                filters,
+                sort: { column: sortColumn, order: sortOrder }
+            };
+            
+            customTables.push(customTable);
+            closeTableBuilder();
+            renderCustomViews();
+            showNotification(`Table "${tableName}" created with ${filteredData.length} rows!`, 'success');
+        }
+
+        function closeTableBuilder() {
+            document.getElementById('tableBuilderModal').classList.remove('active');
+        }
+
+        function renderCustomViews() {
+            const container = document.getElementById('customViewsContainer');
+            
+            let html = '';
+            
+            // Render charts
+            if (dashboardConfig.charts.length > 0) {
+                html += `<div class="charts-grid">`;
+                dashboardConfig.charts.forEach(col => {
+                    html += `<div class="chart-card">
+                        <h3 class="chart-title">${col}</h3>
+                        <canvas id="chart_${col.replace(/\s/g, '_')}"></canvas>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+            
+            // Render stats
+            if (dashboardConfig.stats.length > 0) {
+                html += `<div class="stats-grid">`;
+                dashboardConfig.stats.forEach(col => {
+                    const values = displayData.map(r => parseFloat(r[col])).filter(v => !isNaN(v));
+                    if (values.length > 0) {
+                        const sum = values.reduce((a, b) => a + b, 0);
+                        const avg = sum / values.length;
+                        const max = Math.max(...values);
+                        const min = Math.min(...values);
+                        
+                        html += `
+                            <div class="stat-card">
+                                <div class="stat-number">${avg.toFixed(2)}</div>
+                                <div class="stat-label">Avg ${col}</div>
+                                <div style="color: #9ca3af; font-size: 0.85em; margin-top: 5px;">
+                                    Min: ${min.toFixed(2)} | Max: ${max.toFixed(2)}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                html += `</div>`;
+            }
+            
+            // Render custom tables
+            customTables.forEach(table => {
+                html += `
+                    <div class="view-section">
+                        <div class="view-header">
+                            <div class="view-title">📋 ${table.name}</div>
+                            <div class="view-actions">
+                                <button class="icon-btn" onclick="exportTable('${table.id}')" title="Export">📥</button>
+                                <button class="icon-btn" onclick="deleteTable('${table.id}')" title="Delete">🗑️</button>
+                            </div>
+                        </div>
+                        <input type="text" class="search-box" placeholder="🔍 Search..." onkeyup="searchTable('${table.id}', this.value)">
+                        <div class="scroll-container">
+                            <table id="${table.id}">
+                                <thead>
+                                    <tr>${table.columns.map(col => `<th>${col}</th>`).join('')}</tr>
+                                </thead>
+                                <tbody>
+                                    ${table.data.slice(0, 100).map(record => 
+                                        `<tr>${table.columns.map(col => `<td>${record[col] || '-'}</td>`).join('')}</tr>`
+                                    ).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="text-align: center; color: #9ca3af; margin-top: 10px;">
+                            Showing ${Math.min(100, table.data.length)} of ${table.data.length} rows
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Render charts
+            setTimeout(() => {
+                dashboardConfig.charts.forEach(col => {
+                    renderChart(col);
+                });
+            }, 100);
+        }
+
+        function renderChart(column) {
+            const values = displayData.map(r => r[column]).filter(v => v);
+            const counts = {};
+            values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+            
+            const ctx = document.getElementById(`chart_${column.replace(/\s/g, '_')}`);
+            if (!ctx) return;
+            
+            const chartType = Object.keys(counts).length <= 6 ? 'doughnut' : 'bar';
+            
+            new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: Object.keys(counts),
+                    datasets: [{
+                        label: column,
+                        data: Object.values(counts),
+                        backgroundColor: generateColors(Object.keys(counts).length),
+                        borderWidth: 0,
+                        borderRadius: chartType === 'bar' ? 8 : 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: chartType === 'doughnut' ? 'bottom' : 'top',
+                            labels: { color: '#e4e4e7', font: { size: 11 }, boxWidth: 12 }
+                        }
+                    },
+                    scales: chartType === 'bar' ? {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#9ca3af', maxRotation: 45 },
+                            grid: { display: false }
+                        }
+                    } : {}
+                }
+            });
+        }
+
+        function generateColors(count) {
+            const colors = ['#8b5cf6', '#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#a78bfa', '#f97316', '#8b5cf6', '#6366f1'];
+            return Array.from({ length: count }, (_, i) => colors[i % colors.length]);
+        }
+
+        function searchTable(tableId, searchTerm) {
+            const table = customTables.find(t => t.id === tableId);
+            if (!table) return;
+            
+            const term = searchTerm.toLowerCase();
+            const filtered = term ? 
+                table.data.filter(r => table.columns.some(c => String(r[c]).toLowerCase().includes(term))) :
+                table.data;
+            
+            const tbody = document.querySelector(`#${tableId} tbody`);
+            tbody.innerHTML = filtered.slice(0, 100).map(record => 
+                `<tr>${table.columns.map(col => `<td>${record[col] || '-'}</td>`).join('')}</tr>`
+            ).join('');
+        }
+
+        function exportTable(tableId) {
+            const table = customTables.find(t => t.id === tableId);
+            if (!table) return;
+            
+            let csv = table.columns.map(h => `"${h}"`).join(',') + '\n';
+            table.data.forEach(record => {
+                csv += table.columns.map(col => `"${String(record[col] || '').replace(/"/g, '""')}"`).join(',') + '\n';
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${table.name.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            showNotification('Table exported!', 'success');
+        }
+
+        function deleteTable(tableId) {
+            if (!confirm('Delete this table?')) return;
+            
+            customTables = customTables.filter(t => t.id !== tableId);
+            renderCustomViews();
+            showNotification('Table deleted', 'info');
+        }
+
+        function exportToCSV() {
+            let csv = columns.map(h => `"${h}"`).join(',') + '\n';
+            displayData.forEach(record => {
+                csv += columns.map(col => `"${String(record[col] || '').replace(/"/g, '""')}"`).join(',') + '\n';
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'export_' + new Date().toISOString().split('T')[0] + '.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            showNotification('Data exported!', 'success');
+        }
+
+        function uploadNew() {
+            if (confirm('Upload new data? Current data and custom views will be replaced.')) {
+                clearData();
+            }
+        }
+
+        function openGoogleSheetsModal() {
+            document.getElementById('googleSheetsModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('googleSheetsModal').classList.remove('active');
+        }
+
+        async function connectGoogleSheets() {
+            const url = document.getElementById('sheetsUrl').value.trim();
+            
+            if (!url) {
+                showNotification('Please enter a Google Sheets URL', 'error');
+                return;
+            }
+
+            let csvUrl = url;
+            if (url.includes('/edit')) {
+                csvUrl = url.replace('/edit#gid=', '/export?format=csv&gid=');
+                csvUrl = csvUrl.replace('/edit?usp=sharing', '/export?format=csv');
+                csvUrl = csvUrl.replace('/edit', '/export?format=csv');
+            }
+
+            sheetsUrl = csvUrl;
+            isGoogleSheets = true;
+            currentFileName = 'Google Sheets';
+            
+            closeModal();
+            await loadGoogleSheets();
+            
+            const interval = parseInt(document.getElementById('refreshInterval').value);
+            if (interval > 0) {
+                if (refreshIntervalId) clearInterval(refreshIntervalId);
+                refreshIntervalId = setInterval(loadGoogleSheets, interval * 60 * 1000);
+                showNotification(`Connected! Auto-refreshing every ${interval} minute(s)`, 'success');
+            } else {
+                showNotification('Connected to Google Sheets!', 'success');
+            }
+        }
+
+        async function loadGoogleSheets() {
+            showLoading('Loading from Google Sheets...');
+            
+            try {
+                updateProgress(30, 'Fetching data...');
+                const response = await fetch(sheetsUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch. Make sure sheet is published to web.');
+                }
+                
+                updateProgress(60, 'Parsing data...');
+                const csv = await response.text();
+                await smartParseCSV(csv);
+            } catch (error) {
+                hideLoading();
+                showNotification('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function refreshData() {
+            if (isGoogleSheets && sheetsUrl) {
+                await loadGoogleSheets();
+            } else {
+                showNotification('Refresh available for Google Sheets only', 'info');
+            }
+        }
+
+        function clearData() {
+            if (refreshIntervalId) clearInterval(refreshIntervalId);
+            rawData = [];
+            displayData = [];
+            columns = [];
+            customTables = [];
+            dashboardConfig = { charts: [], stats: [] };
+            isGoogleSheets = false;
+            sheetsUrl = '';
+            detectedFormat = null;
+            document.getElementById('uploadSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden');
+            fileInput.value = '';
+            showNotification('Data cleared', 'info');
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            setTimeout(() => notification.style.display = 'none', 5000);
+        }
+    </script>
 </body>
 </html>
