@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Data Dashboard - Enhanced</title>
+    <title>Smart Data Dashboard - Auto-Detect & Custom Views</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
@@ -22,7 +22,7 @@
         }
 
         .container {
-            max-width: 1800px;
+            max-width: 1900px;
             margin: 0 auto;
         }
 
@@ -173,6 +173,11 @@
             color: white;
         }
 
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -221,6 +226,118 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 600;
+        }
+
+        .dashboard-builder {
+            background: rgba(26,31,58,0.8);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .builder-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .builder-title {
+            font-size: 1.5em;
+            color: #a78bfa;
+            font-weight: 700;
+        }
+
+        .widget-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .widget-option {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(139,92,246,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .widget-option:hover {
+            background: rgba(139,92,246,0.1);
+            border-color: rgba(139,92,246,0.6);
+            transform: translateY(-2px);
+        }
+
+        .widget-option.selected {
+            background: rgba(139,92,246,0.2);
+            border-color: #8b5cf6;
+        }
+
+        .widget-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .widget-name {
+            font-size: 1.1em;
+            color: #d1d5db;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .widget-desc {
+            font-size: 0.85em;
+            color: #9ca3af;
+        }
+
+        .custom-views {
+            display: grid;
+            gap: 30px;
+        }
+
+        .view-section {
+            background: rgba(26,31,58,0.6);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        .view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .view-title {
+            font-size: 1.3em;
+            color: #e4e4e7;
+            font-weight: 600;
+        }
+
+        .view-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #e4e4e7;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.1em;
+        }
+
+        .icon-btn:hover {
+            background: rgba(139,92,246,0.3);
+            transform: scale(1.05);
         }
 
         .charts-grid {
@@ -361,6 +478,7 @@
             align-items: center;
             justify-content: center;
             overflow-y: auto;
+            padding: 20px;
         }
 
         .modal.active { display: flex; }
@@ -369,8 +487,8 @@
             background: linear-gradient(135deg, #1a1f3a 0%, #2a1f3d 100%);
             padding: 40px;
             border-radius: 20px;
-            max-width: 900px;
-            width: 90%;
+            max-width: 1000px;
+            width: 95%;
             border: 1px solid rgba(255,255,255,0.2);
             box-shadow: 0 20px 60px rgba(0,0,0,0.5);
             max-height: 90vh;
@@ -396,7 +514,7 @@
             font-size: 0.9em;
         }
 
-        input[type="text"], input[type="url"], input[type="number"], select {
+        input[type="text"], input[type="url"], input[type="number"], select, textarea {
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(167,139,250,0.4);
             color: #e4e4e7;
@@ -407,7 +525,12 @@
             font-size: 1em;
         }
 
-        input:focus, select:focus {
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: #8b5cf6;
             box-shadow: 0 0 10px rgba(139,92,246,0.3);
@@ -459,20 +582,6 @@
             font-weight: 600;
         }
 
-        .settings-panel {
-            background: rgba(26,31,58,0.8);
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .settings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
         .progress-bar {
             width: 100%;
             height: 8px;
@@ -495,95 +604,87 @@
             margin-top: 5px;
         }
 
-        .column-mapper {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(167,139,250,0.2);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .column-mapping-row {
+        .column-list {
             display: grid;
-            grid-template-columns: 1fr 40px 1fr 60px;
-            gap: 15px;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 15px;
-            background: rgba(255,255,255,0.02);
-            border-radius: 8px;
-        }
-
-        .checkbox-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            accent-color: #8b5cf6;
-        }
-
-        .arrow {
-            text-align: center;
-            color: #8b5cf6;
-            font-size: 1.2em;
-        }
-
-        .sheet-preview {
-            margin-top: 20px;
-            padding: 20px;
-            background: rgba(255,255,255,0.02);
-            border-radius: 12px;
-            border: 1px solid rgba(167,139,250,0.2);
-        }
-
-        .preview-grid {
-            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 10px;
             margin-top: 15px;
         }
 
-        .preview-row {
+        .column-item {
+            background: rgba(255,255,255,0.05);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(139,92,246,0.3);
             display: flex;
+            align-items: center;
             gap: 10px;
-            padding: 8px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 6px;
+        }
+
+        .column-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #8b5cf6;
+        }
+
+        .column-item label {
+            cursor: pointer;
+            color: #d1d5db;
             font-size: 0.9em;
-        }
-
-        .preview-cell {
             flex: 1;
-            padding: 5px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
-        .preview-header {
-            font-weight: 600;
-            color: #a78bfa;
+        .detection-info {
+            background: rgba(16,185,129,0.1);
+            border: 1px solid rgba(16,185,129,0.3);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .detection-info h4 {
+            color: #10b981;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .detection-detail {
+            color: #9ca3af;
+            font-size: 0.9em;
+            margin: 5px 0;
+        }
+
+        .filter-group {
+            background: rgba(255,255,255,0.03);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(139,92,246,0.2);
+            margin-bottom: 20px;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: 200px 150px 1fr 50px;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
         }
 
         @media (max-width: 768px) {
             .charts-grid, .upload-options { grid-template-columns: 1fr; }
             h1 { font-size: 2em; }
-            .column-mapping-row {
+            .filter-row {
                 grid-template-columns: 1fr;
             }
-            .arrow { display: none; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>📊 Advanced Data Dashboard - Enhanced</h1>
-            <p class="subtitle">Smart Excel Parsing • Column Mapping • Google Sheets • Real-time Updates</p>
+            <h1>🚀 Smart Data Dashboard</h1>
+            <p class="subtitle">Auto-Detect Formatted Sheets • Custom Table Builder • Dynamic Visualizations</p>
         </header>
 
         <div id="uploadSection">
@@ -591,14 +692,14 @@
                 <div class="upload-card" id="fileUploadCard">
                     <div class="upload-icon">📤</div>
                     <div class="upload-title">Upload File</div>
-                    <div class="upload-description">CSV or Excel with auto-detection</div>
+                    <div class="upload-description">Auto-detect CSV/Excel format</div>
                     <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
                 </div>
                 
                 <div class="upload-card" onclick="openGoogleSheetsModal()">
                     <div class="upload-icon">📊</div>
                     <div class="upload-title">Connect Google Sheets</div>
-                    <div class="upload-description">Live data from spreadsheet</div>
+                    <div class="upload-description">Live data sync</div>
                 </div>
             </div>
         </div>
@@ -610,103 +711,78 @@
                     <span class="file-info-text" id="fileName">No file loaded</span>
                 </div>
                 <button class="btn btn-primary" onclick="uploadNew()">📤 New Upload</button>
-                <button class="btn btn-secondary" onclick="showColumnMapper()">🔧 Remap Columns</button>
+                <button class="btn btn-warning" onclick="openDashboardBuilder()">🎨 Build Dashboard</button>
+                <button class="btn btn-secondary" onclick="openTableBuilder()">📋 Create Table</button>
                 <button class="btn btn-success" onclick="exportToCSV()">📥 Export</button>
                 <button class="btn btn-secondary" onclick="refreshData()">🔄 Refresh</button>
                 <button class="btn btn-danger" onclick="clearData()">🗑️ Clear</button>
             </div>
 
-            <div class="settings-panel">
-                <h3 style="color: #a78bfa; margin-bottom: 15px;">⚙️ Performance Settings</h3>
-                <div class="settings-grid">
-                    <div class="form-group">
-                        <label>Sample Size (for large files)</label>
-                        <select id="sampleSize" onchange="applySampling()">
-                            <option value="0">All Records</option>
-                            <option value="1000">1,000 records</option>
-                            <option value="5000">5,000 records</option>
-                            <option value="10000" selected>10,000 records</option>
-                            <option value="50000">50,000 records</option>
-                            <option value="100000">100,000 records</option>
-                        </select>
-                        <div class="help-text">Speeds up visualization for large datasets</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Records Per Page</label>
-                        <select id="pageSize" onchange="updatePagination()">
-                            <option value="50">50</option>
-                            <option value="100" selected>100</option>
-                            <option value="250">250</option>
-                            <option value="500">500</option>
-                            <option value="1000">1,000</option>
-                        </select>
-                        <div class="help-text">Controls table scrolling performance</div>
-                    </div>
-                    <div class="form-group">
-                        <label>Max Charts</label>
-                        <select id="maxCharts" onchange="updateDashboard()">
-                            <option value="4">4 charts</option>
-                            <option value="6" selected>6 charts</option>
-                            <option value="8">8 charts</option>
-                            <option value="12">12 charts</option>
-                            <option value="999">All charts</option>
-                        </select>
-                        <div class="help-text">Limit charts for better performance</div>
-                    </div>
-                </div>
-            </div>
+            <div id="statsContainer"></div>
+            <div id="customViewsContainer"></div>
+        </div>
+    </div>
 
-            <div class="stats-grid" id="statsGrid"></div>
-            <div class="charts-grid" id="chartsGrid"></div>
+    <!-- Dashboard Builder Modal -->
+    <div id="dashboardBuilderModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-header">🎨 Dashboard Builder</h2>
+            <p style="color: #9ca3af; margin-bottom: 25px;">
+                Select which visualizations and statistics you want to display
+            </p>
+            
+            <h3 style="color: #a78bfa; margin-bottom: 15px;">📊 Charts & Visualizations</h3>
+            <div class="widget-selector" id="chartWidgets"></div>
 
-            <div class="table-container">
-                <h3 class="chart-title">Data Table</h3>
-                <input type="text" id="searchBox" class="search-box" placeholder="🔍 Search in any column...">
-                <div class="scroll-container">
-                    <table id="dataTable">
-                        <thead id="tableHead"></thead>
-                        <tbody id="tableBody"></tbody>
-                    </table>
-                </div>
-                <div class="pagination" id="pagination"></div>
+            <h3 style="color: #a78bfa; margin-bottom: 15px; margin-top: 25px;">📈 Statistics</h3>
+            <div class="widget-selector" id="statWidgets"></div>
+
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button class="btn btn-primary" style="flex: 1;" onclick="applyDashboardConfig()">✓ Apply Dashboard</button>
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closeDashboardBuilder()">Cancel</button>
             </div>
         </div>
     </div>
 
-    <!-- Column Mapping Modal -->
-    <div id="columnMapperModal" class="modal">
+    <!-- Table Builder Modal -->
+    <div id="tableBuilderModal" class="modal">
         <div class="modal-content">
-            <h2 class="modal-header">📋 Column Mapping</h2>
-            <p style="color: #9ca3af; margin-bottom: 20px;">
-                Select which columns to include and map them to your desired names. 
-                First row is detected as header. Uncheck columns you don't need.
-            </p>
+            <h2 class="modal-header">📋 Custom Table Builder</h2>
             
             <div class="form-group">
-                <label>Header Row (starting from 1)</label>
-                <input type="number" id="headerRow" value="1" min="1" onchange="updateColumnMapping()">
-                <div class="help-text">Which row contains your column headers?</div>
+                <label>Table Name</label>
+                <input type="text" id="tableName" placeholder="e.g., Sales Summary">
             </div>
 
             <div class="form-group">
-                <label>Data Start Row (starting from 1)</label>
-                <input type="number" id="dataStartRow" value="2" min="1">
-                <div class="help-text">Which row does your actual data start?</div>
+                <label>Select Columns to Include</label>
+                <div class="column-list" id="tableColumnList"></div>
             </div>
 
-            <div class="sheet-preview" id="sheetPreview">
-                <h4 style="color: #a78bfa; margin-bottom: 10px;">Data Preview (First 5 rows)</h4>
-                <div id="previewContent"></div>
+            <div class="filter-group">
+                <h4 style="color: #a78bfa; margin-bottom: 15px;">🔍 Filters (Optional)</h4>
+                <div id="filterContainer"></div>
+                <button class="btn btn-secondary" onclick="addFilter()" style="margin-top: 10px;">+ Add Filter</button>
             </div>
 
-            <div class="column-mapper" id="columnMapper">
-                <h4 style="color: #a78bfa; margin-bottom: 15px;">Column Selection & Mapping</h4>
-                <div id="columnMappings"></div>
+            <div class="form-group">
+                <label>Sort By</label>
+                <select id="tableSortColumn">
+                    <option value="">None</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Sort Order</label>
+                <select id="tableSortOrder">
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                </select>
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 30px;">
-                <button class="btn btn-primary" style="flex: 1;" onclick="applyColumnMapping()">✓ Apply Mapping</button>
-                <button class="btn btn-secondary" style="flex: 1;" onclick="closeColumnMapper()">Cancel</button>
+                <button class="btn btn-primary" style="flex: 1;" onclick="createCustomTable()">✓ Create Table</button>
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closeTableBuilder()">Cancel</button>
             </div>
         </div>
     </div>
@@ -764,40 +840,34 @@
         let columns = [];
         let charts = {};
         let currentFileName = '';
-        let currentPage = 1;
         let refreshIntervalId = null;
         let isGoogleSheets = false;
         let sheetsUrl = '';
-        
-        // Enhanced Excel parsing variables
-        let excelWorkbook = null;
-        let allSheetData = [];
-        let columnMapping = {};
-        let headerRowIndex = 0;
-        let dataStartRowIndex = 1;
+        let customTables = [];
+        let dashboardConfig = {
+            charts: [],
+            stats: []
+        };
+        let detectedFormat = null;
 
         // File upload handling
         const fileUploadCard = document.getElementById('fileUploadCard');
         const fileInput = document.getElementById('fileInput');
 
         fileUploadCard.addEventListener('click', () => fileInput.click());
-
         fileUploadCard.addEventListener('dragover', (e) => {
             e.preventDefault();
             fileUploadCard.classList.add('dragover');
         });
-
         fileUploadCard.addEventListener('dragleave', () => {
             fileUploadCard.classList.remove('dragover');
         });
-
         fileUploadCard.addEventListener('drop', (e) => {
             e.preventDefault();
             fileUploadCard.classList.remove('dragover');
             const files = e.dataTransfer.files;
             if (files.length > 0) handleFile(files[0]);
         });
-
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) handleFile(e.target.files[0]);
         });
@@ -822,199 +892,116 @@
             isGoogleSheets = false;
             const fileSize = (file.size / (1024 * 1024)).toFixed(2);
             
-            showLoading(`Loading ${fileSize}MB file...`);
-            updateProgress(20, 'Reading file...');
+            showLoading(`Analyzing ${fileSize}MB file...`);
+            updateProgress(20, 'Detecting format...');
             
             const reader = new FileReader();
             
             if (file.name.endsWith('.csv')) {
                 reader.onload = async (e) => {
                     updateProgress(50, 'Parsing CSV...');
-                    await new Promise(resolve => setTimeout(resolve, 100));
                     const text = e.target.result;
-                    await parseCSVDirect(text);
-                    updateProgress(100, 'Complete!');
-                    setTimeout(hideLoading, 500);
+                    await smartParseCSV(text);
                 };
                 reader.readAsText(file);
             } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
                 reader.onload = async (e) => {
                     updateProgress(50, 'Parsing Excel...');
-                    await new Promise(resolve => setTimeout(resolve, 100));
                     const data = new Uint8Array(e.target.result);
-                    excelWorkbook = XLSX.read(data, { 
+                    const workbook = XLSX.read(data, { 
                         type: 'array',
                         cellDates: true,
                         cellNF: false,
                         cellText: false
                     });
-                    await parseExcelFile();
+                    await smartParseExcel(workbook);
                 };
                 reader.readAsArrayBuffer(file);
-            } else {
-                hideLoading();
-                showNotification('Please upload a CSV or Excel file', 'error');
             }
         }
 
-        async function parseCSVDirect(csv) {
+        async function smartParseCSV(csv) {
+            updateProgress(60, 'Auto-detecting structure...');
+            
             const lines = csv.trim().split('\n');
             if (lines.length < 2) {
+                hideLoading();
                 showNotification('File must have at least a header row and one data row', 'error');
                 return;
             }
 
-            columns = parseCSVLine(lines[0]);
+            // Smart header detection
+            const detectionResult = detectDataStructure(lines);
+            detectedFormat = detectionResult;
+            
+            updateProgress(70, 'Extracting data...');
+            
+            const headerLine = lines[detectionResult.headerRow];
+            columns = parseCSVLine(headerLine).map(col => cleanValue(col));
+            
             rawData = [];
+            const dataLines = lines.slice(detectionResult.dataStartRow);
             
             const chunkSize = 1000;
-            for (let i = 1; i < lines.length; i += chunkSize) {
-                const chunk = lines.slice(i, i + chunkSize);
+            for (let i = 0; i < dataLines.length; i += chunkSize) {
+                const chunk = dataLines.slice(i, i + chunkSize);
                 chunk.forEach(line => {
                     if (line.trim()) {
                         const values = parseCSVLine(line);
                         const record = {};
+                        let hasData = false;
+                        
                         columns.forEach((col, index) => {
-                            record[col] = cleanValue(values[index]);
+                            const value = cleanValue(values[index]);
+                            record[col] = value;
+                            if (value) hasData = true;
                         });
-                        rawData.push(record);
+                        
+                        if (hasData) rawData.push(record);
                     }
                 });
                 
-                const progress = 60 + (i / lines.length) * 30;
-                updateProgress(progress, `Processed ${Math.min(i + chunkSize, lines.length)} / ${lines.length} rows`);
+                const progress = 70 + (i / dataLines.length) * 20;
+                updateProgress(progress, `Processed ${Math.min(i + chunkSize, dataLines.length)} / ${dataLines.length} rows`);
                 await new Promise(resolve => setTimeout(resolve, 0));
             }
 
+            updateProgress(95, 'Finalizing...');
             await initializeDashboard();
-            showNotification(`Loaded ${rawData.length.toLocaleString()} records`, 'success');
+            updateProgress(100, 'Complete!');
+            setTimeout(hideLoading, 500);
         }
 
-        async function parseExcelFile() {
-            if (!excelWorkbook) return;
+        async function smartParseExcel(workbook) {
+            updateProgress(60, 'Auto-detecting Excel structure...');
             
-            updateProgress(60, 'Reading Excel sheets...');
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
             
-            const firstSheetName = excelWorkbook.SheetNames[0];
-            const worksheet = excelWorkbook.Sheets[firstSheetName];
-            
-            // Convert to array of arrays (preserves all data)
-            allSheetData = XLSX.utils.sheet_to_json(worksheet, { 
+            // Convert to array of arrays
+            const sheetData = XLSX.utils.sheet_to_json(worksheet, { 
                 header: 1,
                 raw: false,
                 defval: ''
             });
             
-            updateProgress(80, 'Preparing column mapping...');
-            
-            // Show column mapper for user to select columns
-            hideLoading();
-            showColumnMapperWithData();
-        }
-
-        function showColumnMapperWithData() {
-            document.getElementById('columnMapperModal').classList.add('active');
-            updateColumnMapping();
-        }
-
-        function updateColumnMapping() {
-            const headerRowNum = parseInt(document.getElementById('headerRow').value) || 1;
-            headerRowIndex = headerRowNum - 1;
-            
-            if (headerRowIndex >= allSheetData.length) {
-                showNotification('Header row exceeds available data rows', 'error');
+            if (sheetData.length < 2) {
+                hideLoading();
+                showNotification('Sheet must have at least a header row and one data row', 'error');
                 return;
             }
 
-            // Show preview
-            showSheetPreview();
+            // Smart detection
+            const detectionResult = detectDataStructure(sheetData.map(row => row.join(',')));
+            detectedFormat = detectionResult;
             
-            // Get headers from specified row
-            const headers = allSheetData[headerRowIndex] || [];
-            const mappingsDiv = document.getElementById('columnMappings');
+            updateProgress(70, 'Extracting columns and data...');
             
-            mappingsDiv.innerHTML = headers.map((header, index) => {
-                const originalName = header || `Column_${index + 1}`;
-                const cleanedName = String(originalName).trim();
-                
-                return `
-                    <div class="column-mapping-row">
-                        <div>
-                            <strong style="color: #a78bfa;">Source Column:</strong><br>
-                            <span style="color: #d1d5db;">${cleanedName}</span>
-                        </div>
-                        <div class="arrow">→</div>
-                        <div>
-                            <input type="text" 
-                                   id="mapping_${index}" 
-                                   value="${cleanedName}"
-                                   placeholder="Output name"
-                                   style="width: 100%;">
-                        </div>
-                        <div class="checkbox-wrapper">
-                            <input type="checkbox" 
-                                   id="include_${index}" 
-                                   checked>
-                            <label for="include_${index}" style="margin: 0; color: #9ca3af;">Include</label>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function showSheetPreview() {
-            const previewContent = document.getElementById('previewContent');
-            const headerRowNum = parseInt(document.getElementById('headerRow').value) || 1;
-            const headerRow = allSheetData[headerRowNum - 1] || [];
+            const headerRow = sheetData[detectionResult.headerRow];
+            columns = headerRow.map(col => cleanValue(col)).filter(col => col);
             
-            const previewRows = allSheetData.slice(headerRowNum, Math.min(headerRowNum + 5, allSheetData.length));
-            
-            let html = `
-                <div class="preview-row">
-                    ${headerRow.map(h => `<div class="preview-cell preview-header">${h || '(empty)'}</div>`).join('')}
-                </div>
-            `;
-            
-            previewRows.forEach(row => {
-                html += `
-                    <div class="preview-row">
-                        ${row.map(cell => `<div class="preview-cell">${cell || '-'}</div>`).join('')}
-                    </div>
-                `;
-            });
-            
-            previewContent.innerHTML = html;
-        }
-
-        async function applyColumnMapping() {
-            showLoading('Applying column mapping...');
-            
-            const headerRowNum = parseInt(document.getElementById('headerRow').value) || 1;
-            const dataStartRowNum = parseInt(document.getElementById('dataStartRow').value) || 2;
-            headerRowIndex = headerRowNum - 1;
-            dataStartRowIndex = dataStartRowNum - 1;
-            
-            const headers = allSheetData[headerRowIndex] || [];
-            
-            // Build column mapping
-            columnMapping = {};
-            columns = [];
-            
-            headers.forEach((header, index) => {
-                const includeCheckbox = document.getElementById(`include_${index}`);
-                if (includeCheckbox && includeCheckbox.checked) {
-                    const mappingInput = document.getElementById(`mapping_${index}`);
-                    const outputName = mappingInput ? mappingInput.value.trim() : header;
-                    columnMapping[index] = outputName || `Column_${index + 1}`;
-                    columns.push(columnMapping[index]);
-                }
-            });
-            
-            updateProgress(30, 'Processing rows...');
-            
-            // Process data rows
             rawData = [];
-            const dataRows = allSheetData.slice(dataStartRowIndex);
+            const dataRows = sheetData.slice(detectionResult.dataStartRow);
             
             const chunkSize = 1000;
             for (let i = 0; i < dataRows.length; i += chunkSize) {
@@ -1024,67 +1011,90 @@
                     const record = {};
                     let hasData = false;
                     
-                    Object.entries(columnMapping).forEach(([sourceIndex, outputName]) => {
-                        const value = cleanValue(row[sourceIndex]);
-                        record[outputName] = value;
+                    columns.forEach((col, index) => {
+                        const value = cleanValue(row[index]);
+                        record[col] = value;
                         if (value) hasData = true;
                     });
                     
-                    // Only add row if it has at least some data
-                    if (hasData) {
-                        rawData.push(record);
-                    }
+                    if (hasData) rawData.push(record);
                 });
                 
-                const progress = 30 + (i / dataRows.length) * 60;
+                const progress = 70 + (i / dataRows.length) * 20;
                 updateProgress(progress, `Processed ${Math.min(i + chunkSize, dataRows.length)} / ${dataRows.length} rows`);
                 await new Promise(resolve => setTimeout(resolve, 0));
             }
-            
+
             updateProgress(95, 'Finalizing...');
-            
-            closeColumnMapper();
             await initializeDashboard();
-            
             updateProgress(100, 'Complete!');
             setTimeout(hideLoading, 500);
-            
-            showNotification(`Loaded ${rawData.length.toLocaleString()} records with ${columns.length} columns`, 'success');
         }
 
-        function cleanValue(value) {
-            if (value === null || value === undefined || value === '') return '';
+        function detectDataStructure(lines) {
+            // Smart detection algorithm
+            let headerRow = 0;
+            let dataStartRow = 1;
             
-            // Convert to string and trim
-            let cleaned = String(value).trim();
+            // Check first 10 rows for patterns
+            const sampleSize = Math.min(10, lines.length);
+            const rowAnalysis = [];
             
-            // Remove special characters that might cause issues
-            cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
-            
-            // Handle common Excel formatting issues
-            if (cleaned.startsWith('="') && cleaned.endsWith('"')) {
-                cleaned = cleaned.slice(2, -1);
+            for (let i = 0; i < sampleSize; i++) {
+                const cells = typeof lines[i] === 'string' ? parseCSVLine(lines[i]) : lines[i];
+                
+                // Count non-empty cells
+                const nonEmpty = cells.filter(cell => cell && String(cell).trim()).length;
+                
+                // Check if mostly text (likely header)
+                const textCells = cells.filter(cell => {
+                    const str = String(cell).trim();
+                    return str && isNaN(str) && !isDateLike(str);
+                }).length;
+                
+                // Check if has numbers (likely data)
+                const numberCells = cells.filter(cell => {
+                    const str = String(cell).trim();
+                    return str && !isNaN(str);
+                }).length;
+                
+                rowAnalysis.push({
+                    index: i,
+                    nonEmpty,
+                    textCells,
+                    numberCells,
+                    percentText: textCells / nonEmpty,
+                    percentNumber: numberCells / nonEmpty
+                });
             }
             
-            return cleaned;
+            // Find header: row with high text percentage
+            const headerCandidates = rowAnalysis.filter(r => r.percentText > 0.5 && r.nonEmpty > 2);
+            if (headerCandidates.length > 0) {
+                headerRow = headerCandidates[0].index;
+                dataStartRow = headerRow + 1;
+            }
+            
+            // Skip empty rows after header
+            for (let i = dataStartRow; i < sampleSize; i++) {
+                const cells = typeof lines[i] === 'string' ? parseCSVLine(lines[i]) : lines[i];
+                const nonEmpty = cells.filter(cell => cell && String(cell).trim()).length;
+                if (nonEmpty > 0) {
+                    dataStartRow = i;
+                    break;
+                }
+            }
+            
+            return {
+                headerRow,
+                dataStartRow,
+                totalRows: lines.length,
+                confidence: headerCandidates.length > 0 ? 'high' : 'medium'
+            };
         }
 
-        function showColumnMapper() {
-            if (!excelWorkbook && rawData.length > 0) {
-                // Create a simple remapping interface for already loaded data
-                showNotification('Column remapping available only during initial Excel upload', 'info');
-                return;
-            }
-            
-            if (excelWorkbook) {
-                showColumnMapperWithData();
-            } else {
-                showNotification('Please upload an Excel file first', 'warning');
-            }
-        }
-
-        function closeColumnMapper() {
-            document.getElementById('columnMapperModal').classList.remove('active');
+        function isDateLike(str) {
+            return /\d{1,4}[-/]\d{1,2}[-/]\d{1,4}/.test(str);
         }
 
         function parseCSVLine(line) {
@@ -1112,6 +1122,474 @@
             }
             result.push(current.trim());
             return result;
+        }
+
+        function cleanValue(value) {
+            if (value === null || value === undefined || value === '') return '';
+            
+            let cleaned = String(value).trim();
+            cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+            
+            if (cleaned.startsWith('="') && cleaned.endsWith('"')) {
+                cleaned = cleaned.slice(2, -1);
+            }
+            
+            return cleaned;
+        }
+
+        async function initializeDashboard() {
+            document.getElementById('uploadSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            document.getElementById('fileName').textContent = currentFileName;
+            
+            displayData = rawData;
+            
+            // Show detection info
+            if (detectedFormat) {
+                showNotification(
+                    `Auto-detected: Header at row ${detectedFormat.headerRow + 1}, Data from row ${detectedFormat.dataStartRow + 1}. Loaded ${rawData.length.toLocaleString()} records.`,
+                    'success'
+                );
+            }
+            
+            renderDefaultDashboard();
+        }
+
+        function renderDefaultDashboard() {
+            const statsContainer = document.getElementById('statsContainer');
+            statsContainer.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">${rawData.length.toLocaleString()}</div>
+                        <div class="stat-label">Total Records</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${columns.length}</div>
+                        <div class="stat-label">Columns</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${customTables.length}</div>
+                        <div class="stat-label">Custom Tables</div>
+                    </div>
+                </div>
+            `;
+            
+            renderCustomViews();
+        }
+
+        function openDashboardBuilder() {
+            document.getElementById('dashboardBuilderModal').classList.add('active');
+            populateDashboardBuilder();
+        }
+
+        function populateDashboardBuilder() {
+            const chartWidgets = document.getElementById('chartWidgets');
+            const statWidgets = document.getElementById('statWidgets');
+            
+            // Chart options for categorical columns
+            const categoricalCols = columns.filter(col => {
+                const values = displayData.map(r => r[col]).filter(v => v);
+                const unique = new Set(values);
+                return unique.size > 1 && unique.size <= 20;
+            });
+            
+            chartWidgets.innerHTML = categoricalCols.map(col => `
+                <div class="widget-option" onclick="toggleWidget('chart', '${col}')" id="chart_${col}">
+                    <div class="widget-icon">📊</div>
+                    <div class="widget-name">${col}</div>
+                    <div class="widget-desc">Distribution chart</div>
+                </div>
+            `).join('');
+            
+            // Stat options for numeric columns
+            const numericCols = columns.filter(col => {
+                const values = displayData.map(r => r[col]).filter(v => v && !isNaN(v));
+                return values.length > displayData.length * 0.5;
+            });
+            
+            statWidgets.innerHTML = numericCols.map(col => `
+                <div class="widget-option" onclick="toggleWidget('stat', '${col}')" id="stat_${col}">
+                    <div class="widget-icon">📈</div>
+                    <div class="widget-name">${col}</div>
+                    <div class="widget-desc">Summary statistics</div>
+                </div>
+            `).join('');
+            
+            // Pre-select existing config
+            dashboardConfig.charts.forEach(col => {
+                const elem = document.getElementById(`chart_${col}`);
+                if (elem) elem.classList.add('selected');
+            });
+            dashboardConfig.stats.forEach(col => {
+                const elem = document.getElementById(`stat_${col}`);
+                if (elem) elem.classList.add('selected');
+            });
+        }
+
+        function toggleWidget(type, column) {
+            const elem = document.getElementById(`${type}_${column}`);
+            elem.classList.toggle('selected');
+        }
+
+        function applyDashboardConfig() {
+            dashboardConfig.charts = [];
+            dashboardConfig.stats = [];
+            
+            document.querySelectorAll('#chartWidgets .widget-option.selected').forEach(elem => {
+                const col = elem.id.replace('chart_', '');
+                dashboardConfig.charts.push(col);
+            });
+            
+            document.querySelectorAll('#statWidgets .widget-option.selected').forEach(elem => {
+                const col = elem.id.replace('stat_', '');
+                dashboardConfig.stats.push(col);
+            });
+            
+            closeDashboardBuilder();
+            renderCustomViews();
+            showNotification('Dashboard updated!', 'success');
+        }
+
+        function closeDashboardBuilder() {
+            document.getElementById('dashboardBuilderModal').classList.remove('active');
+        }
+
+        function openTableBuilder() {
+            document.getElementById('tableBuilderModal').classList.add('active');
+            populateTableBuilder();
+        }
+
+        function populateTableBuilder() {
+            const columnList = document.getElementById('tableColumnList');
+            const sortColumn = document.getElementById('tableSortColumn');
+            
+            columnList.innerHTML = columns.map(col => `
+                <div class="column-item">
+                    <input type="checkbox" id="col_${col}" checked>
+                    <label for="col_${col}">${col}</label>
+                </div>
+            `).join('');
+            
+            sortColumn.innerHTML = '<option value="">None</option>' + 
+                columns.map(col => `<option value="${col}">${col}</option>`).join('');
+            
+            document.getElementById('filterContainer').innerHTML = '';
+        }
+
+        function addFilter() {
+            const container = document.getElementById('filterContainer');
+            const filterId = 'filter_' + Date.now();
+            
+            const filterRow = document.createElement('div');
+            filterRow.className = 'filter-row';
+            filterRow.id = filterId;
+            filterRow.innerHTML = `
+                <select class="filter-column">
+                    ${columns.map(col => `<option value="${col}">${col}</option>`).join('')}
+                </select>
+                <select class="filter-operator">
+                    <option value="equals">Equals</option>
+                    <option value="contains">Contains</option>
+                    <option value="startsWith">Starts with</option>
+                    <option value="endsWith">Ends with</option>
+                    <option value="greaterThan">Greater than</option>
+                    <option value="lessThan">Less than</option>
+                </select>
+                <input type="text" class="filter-value" placeholder="Filter value">
+                <button class="icon-btn" onclick="removeFilter('${filterId}')">🗑️</button>
+            `;
+            
+            container.appendChild(filterRow);
+        }
+
+        function removeFilter(filterId) {
+            document.getElementById(filterId).remove();
+        }
+
+        function createCustomTable() {
+            const tableName = document.getElementById('tableName').value.trim() || 'Custom Table';
+            
+            // Get selected columns
+            const selectedColumns = [];
+            columns.forEach(col => {
+                const checkbox = document.getElementById(`col_${col}`);
+                if (checkbox && checkbox.checked) {
+                    selectedColumns.push(col);
+                }
+            });
+            
+            if (selectedColumns.length === 0) {
+                showNotification('Please select at least one column', 'error');
+                return;
+            }
+            
+            // Get filters
+            const filters = [];
+            document.querySelectorAll('.filter-row').forEach(row => {
+                const column = row.querySelector('.filter-column').value;
+                const operator = row.querySelector('.filter-operator').value;
+                const value = row.querySelector('.filter-value').value;
+                if (value) {
+                    filters.push({ column, operator, value });
+                }
+            });
+            
+            // Get sort
+            const sortColumn = document.getElementById('tableSortColumn').value;
+            const sortOrder = document.getElementById('tableSortOrder').value;
+            
+            // Apply filters
+            let filteredData = [...displayData];
+            filters.forEach(filter => {
+                filteredData = filteredData.filter(record => {
+                    const cellValue = String(record[filter.column]).toLowerCase();
+                    const filterValue = filter.value.toLowerCase();
+                    
+                    switch (filter.operator) {
+                        case 'equals': return cellValue === filterValue;
+                        case 'contains': return cellValue.includes(filterValue);
+                        case 'startsWith': return cellValue.startsWith(filterValue);
+                        case 'endsWith': return cellValue.endsWith(filterValue);
+                        case 'greaterThan': return parseFloat(cellValue) > parseFloat(filterValue);
+                        case 'lessThan': return parseFloat(cellValue) < parseFloat(filterValue);
+                        default: return true;
+                    }
+                });
+            });
+            
+            // Apply sort
+            if (sortColumn) {
+                filteredData.sort((a, b) => {
+                    const aVal = a[sortColumn];
+                    const bVal = b[sortColumn];
+                    
+                    if (!isNaN(aVal) && !isNaN(bVal)) {
+                        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+                    }
+                    
+                    const compare = String(aVal).localeCompare(String(bVal));
+                    return sortOrder === 'asc' ? compare : -compare;
+                });
+            }
+            
+            // Create table object
+            const customTable = {
+                id: 'table_' + Date.now(),
+                name: tableName,
+                columns: selectedColumns,
+                data: filteredData,
+                filters,
+                sort: { column: sortColumn, order: sortOrder }
+            };
+            
+            customTables.push(customTable);
+            closeTableBuilder();
+            renderCustomViews();
+            showNotification(`Table "${tableName}" created with ${filteredData.length} rows!`, 'success');
+        }
+
+        function closeTableBuilder() {
+            document.getElementById('tableBuilderModal').classList.remove('active');
+        }
+
+        function renderCustomViews() {
+            const container = document.getElementById('customViewsContainer');
+            
+            let html = '';
+            
+            // Render charts
+            if (dashboardConfig.charts.length > 0) {
+                html += `<div class="charts-grid">`;
+                dashboardConfig.charts.forEach(col => {
+                    html += `<div class="chart-card">
+                        <h3 class="chart-title">${col}</h3>
+                        <canvas id="chart_${col.replace(/\s/g, '_')}"></canvas>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+            
+            // Render stats
+            if (dashboardConfig.stats.length > 0) {
+                html += `<div class="stats-grid">`;
+                dashboardConfig.stats.forEach(col => {
+                    const values = displayData.map(r => parseFloat(r[col])).filter(v => !isNaN(v));
+                    if (values.length > 0) {
+                        const sum = values.reduce((a, b) => a + b, 0);
+                        const avg = sum / values.length;
+                        const max = Math.max(...values);
+                        const min = Math.min(...values);
+                        
+                        html += `
+                            <div class="stat-card">
+                                <div class="stat-number">${avg.toFixed(2)}</div>
+                                <div class="stat-label">Avg ${col}</div>
+                                <div style="color: #9ca3af; font-size: 0.85em; margin-top: 5px;">
+                                    Min: ${min.toFixed(2)} | Max: ${max.toFixed(2)}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                html += `</div>`;
+            }
+            
+            // Render custom tables
+            customTables.forEach(table => {
+                html += `
+                    <div class="view-section">
+                        <div class="view-header">
+                            <div class="view-title">📋 ${table.name}</div>
+                            <div class="view-actions">
+                                <button class="icon-btn" onclick="exportTable('${table.id}')" title="Export">📥</button>
+                                <button class="icon-btn" onclick="deleteTable('${table.id}')" title="Delete">🗑️</button>
+                            </div>
+                        </div>
+                        <input type="text" class="search-box" placeholder="🔍 Search..." onkeyup="searchTable('${table.id}', this.value)">
+                        <div class="scroll-container">
+                            <table id="${table.id}">
+                                <thead>
+                                    <tr>${table.columns.map(col => `<th>${col}</th>`).join('')}</tr>
+                                </thead>
+                                <tbody>
+                                    ${table.data.slice(0, 100).map(record => 
+                                        `<tr>${table.columns.map(col => `<td>${record[col] || '-'}</td>`).join('')}</tr>`
+                                    ).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="text-align: center; color: #9ca3af; margin-top: 10px;">
+                            Showing ${Math.min(100, table.data.length)} of ${table.data.length} rows
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Render charts
+            setTimeout(() => {
+                dashboardConfig.charts.forEach(col => {
+                    renderChart(col);
+                });
+            }, 100);
+        }
+
+        function renderChart(column) {
+            const values = displayData.map(r => r[column]).filter(v => v);
+            const counts = {};
+            values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+            
+            const ctx = document.getElementById(`chart_${column.replace(/\s/g, '_')}`);
+            if (!ctx) return;
+            
+            const chartType = Object.keys(counts).length <= 6 ? 'doughnut' : 'bar';
+            
+            new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: Object.keys(counts),
+                    datasets: [{
+                        label: column,
+                        data: Object.values(counts),
+                        backgroundColor: generateColors(Object.keys(counts).length),
+                        borderWidth: 0,
+                        borderRadius: chartType === 'bar' ? 8 : 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: chartType === 'doughnut' ? 'bottom' : 'top',
+                            labels: { color: '#e4e4e7', font: { size: 11 }, boxWidth: 12 }
+                        }
+                    },
+                    scales: chartType === 'bar' ? {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#9ca3af' },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#9ca3af', maxRotation: 45 },
+                            grid: { display: false }
+                        }
+                    } : {}
+                }
+            });
+        }
+
+        function generateColors(count) {
+            const colors = ['#8b5cf6', '#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#a78bfa', '#f97316', '#8b5cf6', '#6366f1'];
+            return Array.from({ length: count }, (_, i) => colors[i % colors.length]);
+        }
+
+        function searchTable(tableId, searchTerm) {
+            const table = customTables.find(t => t.id === tableId);
+            if (!table) return;
+            
+            const term = searchTerm.toLowerCase();
+            const filtered = term ? 
+                table.data.filter(r => table.columns.some(c => String(r[c]).toLowerCase().includes(term))) :
+                table.data;
+            
+            const tbody = document.querySelector(`#${tableId} tbody`);
+            tbody.innerHTML = filtered.slice(0, 100).map(record => 
+                `<tr>${table.columns.map(col => `<td>${record[col] || '-'}</td>`).join('')}</tr>`
+            ).join('');
+        }
+
+        function exportTable(tableId) {
+            const table = customTables.find(t => t.id === tableId);
+            if (!table) return;
+            
+            let csv = table.columns.map(h => `"${h}"`).join(',') + '\n';
+            table.data.forEach(record => {
+                csv += table.columns.map(col => `"${String(record[col] || '').replace(/"/g, '""')}"`).join(',') + '\n';
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${table.name.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            showNotification('Table exported!', 'success');
+        }
+
+        function deleteTable(tableId) {
+            if (!confirm('Delete this table?')) return;
+            
+            customTables = customTables.filter(t => t.id !== tableId);
+            renderCustomViews();
+            showNotification('Table deleted', 'info');
+        }
+
+        function exportToCSV() {
+            let csv = columns.map(h => `"${h}"`).join(',') + '\n';
+            displayData.forEach(record => {
+                csv += columns.map(col => `"${String(record[col] || '').replace(/"/g, '""')}"`).join(',') + '\n';
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'export_' + new Date().toISOString().split('T')[0] + '.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            showNotification('Data exported!', 'success');
+        }
+
+        function uploadNew() {
+            if (confirm('Upload new data? Current data and custom views will be replaced.')) {
+                clearData();
+            }
         }
 
         function openGoogleSheetsModal() {
@@ -1162,232 +1640,15 @@
                 const response = await fetch(sheetsUrl);
                 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch Google Sheets. Make sure it\'s published to web.');
+                    throw new Error('Failed to fetch. Make sure sheet is published to web.');
                 }
                 
                 updateProgress(60, 'Parsing data...');
                 const csv = await response.text();
-                await parseCSVDirect(csv);
-                updateProgress(100, 'Complete!');
-                setTimeout(hideLoading, 500);
+                await smartParseCSV(csv);
             } catch (error) {
                 hideLoading();
-                showNotification('Error loading Google Sheets: ' + error.message, 'error');
-            }
-        }
-
-        function applySampling() {
-            const sampleSize = parseInt(document.getElementById('sampleSize').value);
-            
-            if (sampleSize > 0 && rawData.length > sampleSize) {
-                displayData = rawData.slice(0, sampleSize);
-                showNotification(`Sampling ${sampleSize.toLocaleString()} of ${rawData.length.toLocaleString()} records`, 'info');
-            } else {
-                displayData = rawData;
-            }
-            
-            updateDashboard();
-        }
-
-        async function initializeDashboard() {
-            document.getElementById('uploadSection').classList.add('hidden');
-            document.getElementById('dashboardSection').classList.remove('hidden');
-            document.getElementById('fileName').textContent = currentFileName;
-            
-            applySampling();
-        }
-
-        function updateDashboard() {
-            currentPage = 1;
-            renderStats();
-            renderCharts();
-            renderTable();
-            updatePagination();
-            setupSearch();
-        }
-
-        function renderStats() {
-            const statsGrid = document.getElementById('statsGrid');
-            const stats = [];
-            
-            stats.push({ label: 'Total Records', value: rawData.length.toLocaleString() });
-            stats.push({ label: 'Displayed', value: displayData.length.toLocaleString() });
-            stats.push({ label: 'Columns', value: columns.length });
-            
-            columns.slice(0, 3).forEach(col => {
-                const values = displayData.map(r => r[col]).filter(v => v);
-                const uniqueValues = new Set(values);
-                
-                if (uniqueValues.size <= 20 && uniqueValues.size > 1) {
-                    const counts = {};
-                    values.forEach(v => counts[v] = (counts[v] || 0) + 1);
-                    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-                    if (sorted.length > 0) {
-                        stats.push({
-                            label: `Top ${col}`,
-                            value: sorted[0][0].substring(0, 20),
-                            subvalue: `${sorted[0][1]} records`
-                        });
-                    }
-                }
-            });
-
-            statsGrid.innerHTML = stats.slice(0, 6).map(stat => `
-                <div class="stat-card">
-                    <div class="stat-number">${stat.value}</div>
-                    <div class="stat-label">${stat.label}</div>
-                    ${stat.subvalue ? `<div style="color: #9ca3af; font-size: 0.85em; margin-top: 5px;">${stat.subvalue}</div>` : ''}
-                </div>
-            `).join('');
-        }
-
-        function renderCharts() {
-            Object.values(charts).forEach(chart => chart.destroy());
-            charts = {};
-
-            const chartsGrid = document.getElementById('chartsGrid');
-            chartsGrid.innerHTML = '';
-
-            const maxCharts = parseInt(document.getElementById('maxCharts').value);
-            let chartCount = 0;
-
-            for (const col of columns) {
-                if (chartCount >= maxCharts) break;
-                
-                const values = displayData.map(r => r[col]).filter(v => v);
-                const uniqueValues = new Set(values);
-                
-                if (uniqueValues.size > 1 && uniqueValues.size <= 15) {
-                    const counts = {};
-                    values.forEach(v => counts[v] = (counts[v] || 0) + 1);
-                    
-                    const chartCard = document.createElement('div');
-                    chartCard.className = 'chart-card';
-                    chartCard.innerHTML = `
-                        <h3 class="chart-title">${col}</h3>
-                        <canvas id="chart_${chartCount}"></canvas>
-                    `;
-                    chartsGrid.appendChild(chartCard);
-                    
-                    const ctx = document.getElementById(`chart_${chartCount}`);
-                    const chartType = uniqueValues.size <= 6 ? 'doughnut' : 'bar';
-                    
-                    charts[col] = new Chart(ctx, {
-                        type: chartType,
-                        data: {
-                            labels: Object.keys(counts).slice(0, 15),
-                            datasets: [{
-                                label: col,
-                                data: Object.values(counts).slice(0, 15),
-                                backgroundColor: generateColors(Math.min(15, Object.keys(counts).length)),
-                                borderWidth: 0,
-                                borderRadius: chartType === 'bar' ? 8 : 0
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: {
-                                    position: chartType === 'doughnut' ? 'bottom' : 'top',
-                                    labels: { color: '#e4e4e7', font: { size: 10 }, boxWidth: 12 }
-                                }
-                            },
-                            scales: chartType === 'bar' ? {
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: { color: '#9ca3af' },
-                                    grid: { color: 'rgba(255,255,255,0.05)' }
-                                },
-                                x: {
-                                    ticks: { color: '#9ca3af', maxRotation: 45 },
-                                    grid: { display: false }
-                                }
-                            } : {}
-                        }
-                    });
-                    
-                    chartCount++;
-                }
-            }
-        }
-
-        function generateColors(count) {
-            const colors = ['#8b5cf6', '#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#a78bfa', '#f97316'];
-            return colors.slice(0, count);
-        }
-
-        function renderTable() {
-            const tableHead = document.getElementById('tableHead');
-            const tableBody = document.getElementById('tableBody');
-            
-            const pageSize = parseInt(document.getElementById('pageSize').value);
-            const start = (currentPage - 1) * pageSize;
-            const end = start + pageSize;
-            const pageData = displayData.slice(start, end);
-            
-            tableHead.innerHTML = `<tr>${columns.map(col => `<th>${col}</th>`).join('')}</tr>`;
-            tableBody.innerHTML = pageData.map(record => 
-                `<tr>${columns.map(col => `<td>${record[col] || '-'}</td>`).join('')}</tr>`
-            ).join('');
-        }
-
-        function updatePagination() {
-            const pageSize = parseInt(document.getElementById('pageSize').value);
-            const totalPages = Math.ceil(displayData.length / pageSize);
-            
-            const pagination = document.getElementById('pagination');
-            pagination.innerHTML = `
-                <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>← Prev</button>
-                <span>Page ${currentPage} of ${totalPages}</span>
-                <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>Next →</button>
-            `;
-            
-            renderTable();
-        }
-
-        function changePage(delta) {
-            const pageSize = parseInt(document.getElementById('pageSize').value);
-            const totalPages = Math.ceil(displayData.length / pageSize);
-            currentPage = Math.max(1, Math.min(totalPages, currentPage + delta));
-            updatePagination();
-        }
-
-        function setupSearch() {
-            const searchBox = document.getElementById('searchBox');
-            searchBox.value = '';
-            searchBox.onkeyup = (e) => {
-                const term = e.target.value.toLowerCase();
-                const filtered = term ? 
-                    displayData.filter(r => columns.some(c => String(r[c]).toLowerCase().includes(term))) :
-                    displayData;
-                
-                const tableBody = document.getElementById('tableBody');
-                tableBody.innerHTML = filtered.slice(0, 100).map(record => 
-                    `<tr>${columns.map(col => `<td>${record[col] || '-'}</td>`).join('')}</tr>`
-                ).join('');
-            };
-        }
-
-        function exportToCSV() {
-            let csv = columns.map(h => `"${h}"`).join(',') + '\n';
-            displayData.forEach(record => {
-                csv += columns.map(col => `"${String(record[col] || '').replace(/"/g, '""')}"`).join(',') + '\n';
-            });
-            
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'export_' + new Date().toISOString().split('T')[0] + '.csv';
-            a.click();
-            window.URL.revokeObjectURL(url);
-            
-            showNotification('Data exported successfully!', 'success');
-        }
-
-        function uploadNew() {
-            if (confirm('Upload new data? Current data will be replaced.')) {
-                clearData();
+                showNotification('Error: ' + error.message, 'error');
             }
         }
 
@@ -1404,11 +1665,11 @@
             rawData = [];
             displayData = [];
             columns = [];
+            customTables = [];
+            dashboardConfig = { charts: [], stats: [] };
             isGoogleSheets = false;
             sheetsUrl = '';
-            excelWorkbook = null;
-            allSheetData = [];
-            columnMapping = {};
+            detectedFormat = null;
             document.getElementById('uploadSection').classList.remove('hidden');
             document.getElementById('dashboardSection').classList.add('hidden');
             fileInput.value = '';
@@ -1420,7 +1681,7 @@
             notification.textContent = message;
             notification.className = `notification ${type}`;
             notification.style.display = 'block';
-            setTimeout(() => notification.style.display = 'none', 4000);
+            setTimeout(() => notification.style.display = 'none', 5000);
         }
     </script>
 </body>
