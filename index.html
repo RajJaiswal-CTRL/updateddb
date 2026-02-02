@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Data Dashboard</title>
+    <title>Advanced Data Dashboard - Enhanced</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
@@ -360,6 +360,7 @@
             z-index: 1000;
             align-items: center;
             justify-content: center;
+            overflow-y: auto;
         }
 
         .modal.active { display: flex; }
@@ -368,10 +369,12 @@
             background: linear-gradient(135deg, #1a1f3a 0%, #2a1f3d 100%);
             padding: 40px;
             border-radius: 20px;
-            max-width: 600px;
+            max-width: 900px;
             width: 90%;
             border: 1px solid rgba(255,255,255,0.2);
             box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-header {
@@ -492,17 +495,95 @@
             margin-top: 5px;
         }
 
+        .column-mapper {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(167,139,250,0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .column-mapping-row {
+            display: grid;
+            grid-template-columns: 1fr 40px 1fr 60px;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #8b5cf6;
+        }
+
+        .arrow {
+            text-align: center;
+            color: #8b5cf6;
+            font-size: 1.2em;
+        }
+
+        .sheet-preview {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(167,139,250,0.2);
+        }
+
+        .preview-grid {
+            display: grid;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .preview-row {
+            display: flex;
+            gap: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .preview-cell {
+            flex: 1;
+            padding: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .preview-header {
+            font-weight: 600;
+            color: #a78bfa;
+        }
+
         @media (max-width: 768px) {
             .charts-grid, .upload-options { grid-template-columns: 1fr; }
             h1 { font-size: 2em; }
+            .column-mapping-row {
+                grid-template-columns: 1fr;
+            }
+            .arrow { display: none; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>📊 Advanced Data Dashboard</h1>
-            <p class="subtitle">Large Files • Google Sheets • Smart Sampling • Real-time Updates</p>
+            <h1>📊 Advanced Data Dashboard - Enhanced</h1>
+            <p class="subtitle">Smart Excel Parsing • Column Mapping • Google Sheets • Real-time Updates</p>
         </header>
 
         <div id="uploadSection">
@@ -510,7 +591,7 @@
                 <div class="upload-card" id="fileUploadCard">
                     <div class="upload-icon">📤</div>
                     <div class="upload-title">Upload File</div>
-                    <div class="upload-description">CSV or Excel (any size)</div>
+                    <div class="upload-description">CSV or Excel with auto-detection</div>
                     <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
                 </div>
                 
@@ -529,6 +610,7 @@
                     <span class="file-info-text" id="fileName">No file loaded</span>
                 </div>
                 <button class="btn btn-primary" onclick="uploadNew()">📤 New Upload</button>
+                <button class="btn btn-secondary" onclick="showColumnMapper()">🔧 Remap Columns</button>
                 <button class="btn btn-success" onclick="exportToCSV()">📥 Export</button>
                 <button class="btn btn-secondary" onclick="refreshData()">🔄 Refresh</button>
                 <button class="btn btn-danger" onclick="clearData()">🗑️ Clear</button>
@@ -591,6 +673,44 @@
         </div>
     </div>
 
+    <!-- Column Mapping Modal -->
+    <div id="columnMapperModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-header">📋 Column Mapping</h2>
+            <p style="color: #9ca3af; margin-bottom: 20px;">
+                Select which columns to include and map them to your desired names. 
+                First row is detected as header. Uncheck columns you don't need.
+            </p>
+            
+            <div class="form-group">
+                <label>Header Row (starting from 1)</label>
+                <input type="number" id="headerRow" value="1" min="1" onchange="updateColumnMapping()">
+                <div class="help-text">Which row contains your column headers?</div>
+            </div>
+
+            <div class="form-group">
+                <label>Data Start Row (starting from 1)</label>
+                <input type="number" id="dataStartRow" value="2" min="1">
+                <div class="help-text">Which row does your actual data start?</div>
+            </div>
+
+            <div class="sheet-preview" id="sheetPreview">
+                <h4 style="color: #a78bfa; margin-bottom: 10px;">Data Preview (First 5 rows)</h4>
+                <div id="previewContent"></div>
+            </div>
+
+            <div class="column-mapper" id="columnMapper">
+                <h4 style="color: #a78bfa; margin-bottom: 15px;">Column Selection & Mapping</h4>
+                <div id="columnMappings"></div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button class="btn btn-primary" style="flex: 1;" onclick="applyColumnMapping()">✓ Apply Mapping</button>
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closeColumnMapper()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Google Sheets Modal -->
     <div id="googleSheetsModal" class="modal">
         <div class="modal-content">
@@ -648,6 +768,13 @@
         let refreshIntervalId = null;
         let isGoogleSheets = false;
         let sheetsUrl = '';
+        
+        // Enhanced Excel parsing variables
+        let excelWorkbook = null;
+        let allSheetData = [];
+        let columnMapping = {};
+        let headerRowIndex = 0;
+        let dataStartRowIndex = 1;
 
         // File upload handling
         const fileUploadCard = document.getElementById('fileUploadCard');
@@ -696,8 +823,6 @@
             const fileSize = (file.size / (1024 * 1024)).toFixed(2);
             
             showLoading(`Loading ${fileSize}MB file...`);
-            
-            // Simulate progress for user feedback
             updateProgress(20, 'Reading file...');
             
             const reader = new FileReader();
@@ -707,7 +832,7 @@
                     updateProgress(50, 'Parsing CSV...');
                     await new Promise(resolve => setTimeout(resolve, 100));
                     const text = e.target.result;
-                    await parseCSV(text);
+                    await parseCSVDirect(text);
                     updateProgress(100, 'Complete!');
                     setTimeout(hideLoading, 500);
                 };
@@ -717,12 +842,13 @@
                     updateProgress(50, 'Parsing Excel...');
                     await new Promise(resolve => setTimeout(resolve, 100));
                     const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const csv = XLSX.utils.sheet_to_csv(firstSheet);
-                    await parseCSV(csv);
-                    updateProgress(100, 'Complete!');
-                    setTimeout(hideLoading, 500);
+                    excelWorkbook = XLSX.read(data, { 
+                        type: 'array',
+                        cellDates: true,
+                        cellNF: false,
+                        cellText: false
+                    });
+                    await parseExcelFile();
                 };
                 reader.readAsArrayBuffer(file);
             } else {
@@ -731,19 +857,16 @@
             }
         }
 
-        async function parseCSV(csv) {
+        async function parseCSVDirect(csv) {
             const lines = csv.trim().split('\n');
             if (lines.length < 2) {
                 showNotification('File must have at least a header row and one data row', 'error');
                 return;
             }
 
-            updateProgress(60, `Parsing ${lines.length} rows...`);
-            
             columns = parseCSVLine(lines[0]);
             rawData = [];
             
-            // Parse in chunks to avoid blocking
             const chunkSize = 1000;
             for (let i = 1; i < lines.length; i += chunkSize) {
                 const chunk = lines.slice(i, i + chunkSize);
@@ -752,29 +875,216 @@
                         const values = parseCSVLine(line);
                         const record = {};
                         columns.forEach((col, index) => {
-                            record[col] = values[index] || '';
+                            record[col] = cleanValue(values[index]);
                         });
                         rawData.push(record);
                     }
                 });
                 
-                // Update progress
                 const progress = 60 + (i / lines.length) * 30;
                 updateProgress(progress, `Processed ${Math.min(i + chunkSize, lines.length)} / ${lines.length} rows`);
-                
-                // Allow UI to update
                 await new Promise(resolve => setTimeout(resolve, 0));
             }
 
-            updateProgress(90, 'Finalizing...');
+            await initializeDashboard();
+            showNotification(`Loaded ${rawData.length.toLocaleString()} records`, 'success');
+        }
+
+        async function parseExcelFile() {
+            if (!excelWorkbook) return;
             
-            saveToStorage();
+            updateProgress(60, 'Reading Excel sheets...');
+            
+            const firstSheetName = excelWorkbook.SheetNames[0];
+            const worksheet = excelWorkbook.Sheets[firstSheetName];
+            
+            // Convert to array of arrays (preserves all data)
+            allSheetData = XLSX.utils.sheet_to_json(worksheet, { 
+                header: 1,
+                raw: false,
+                defval: ''
+            });
+            
+            updateProgress(80, 'Preparing column mapping...');
+            
+            // Show column mapper for user to select columns
+            hideLoading();
+            showColumnMapperWithData();
+        }
+
+        function showColumnMapperWithData() {
+            document.getElementById('columnMapperModal').classList.add('active');
+            updateColumnMapping();
+        }
+
+        function updateColumnMapping() {
+            const headerRowNum = parseInt(document.getElementById('headerRow').value) || 1;
+            headerRowIndex = headerRowNum - 1;
+            
+            if (headerRowIndex >= allSheetData.length) {
+                showNotification('Header row exceeds available data rows', 'error');
+                return;
+            }
+
+            // Show preview
+            showSheetPreview();
+            
+            // Get headers from specified row
+            const headers = allSheetData[headerRowIndex] || [];
+            const mappingsDiv = document.getElementById('columnMappings');
+            
+            mappingsDiv.innerHTML = headers.map((header, index) => {
+                const originalName = header || `Column_${index + 1}`;
+                const cleanedName = String(originalName).trim();
+                
+                return `
+                    <div class="column-mapping-row">
+                        <div>
+                            <strong style="color: #a78bfa;">Source Column:</strong><br>
+                            <span style="color: #d1d5db;">${cleanedName}</span>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div>
+                            <input type="text" 
+                                   id="mapping_${index}" 
+                                   value="${cleanedName}"
+                                   placeholder="Output name"
+                                   style="width: 100%;">
+                        </div>
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" 
+                                   id="include_${index}" 
+                                   checked>
+                            <label for="include_${index}" style="margin: 0; color: #9ca3af;">Include</label>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showSheetPreview() {
+            const previewContent = document.getElementById('previewContent');
+            const headerRowNum = parseInt(document.getElementById('headerRow').value) || 1;
+            const headerRow = allSheetData[headerRowNum - 1] || [];
+            
+            const previewRows = allSheetData.slice(headerRowNum, Math.min(headerRowNum + 5, allSheetData.length));
+            
+            let html = `
+                <div class="preview-row">
+                    ${headerRow.map(h => `<div class="preview-cell preview-header">${h || '(empty)'}</div>`).join('')}
+                </div>
+            `;
+            
+            previewRows.forEach(row => {
+                html += `
+                    <div class="preview-row">
+                        ${row.map(cell => `<div class="preview-cell">${cell || '-'}</div>`).join('')}
+                    </div>
+                `;
+            });
+            
+            previewContent.innerHTML = html;
+        }
+
+        async function applyColumnMapping() {
+            showLoading('Applying column mapping...');
+            
+            const headerRowNum = parseInt(document.getElementById('headerRow').value) || 1;
+            const dataStartRowNum = parseInt(document.getElementById('dataStartRow').value) || 2;
+            headerRowIndex = headerRowNum - 1;
+            dataStartRowIndex = dataStartRowNum - 1;
+            
+            const headers = allSheetData[headerRowIndex] || [];
+            
+            // Build column mapping
+            columnMapping = {};
+            columns = [];
+            
+            headers.forEach((header, index) => {
+                const includeCheckbox = document.getElementById(`include_${index}`);
+                if (includeCheckbox && includeCheckbox.checked) {
+                    const mappingInput = document.getElementById(`mapping_${index}`);
+                    const outputName = mappingInput ? mappingInput.value.trim() : header;
+                    columnMapping[index] = outputName || `Column_${index + 1}`;
+                    columns.push(columnMapping[index]);
+                }
+            });
+            
+            updateProgress(30, 'Processing rows...');
+            
+            // Process data rows
+            rawData = [];
+            const dataRows = allSheetData.slice(dataStartRowIndex);
+            
+            const chunkSize = 1000;
+            for (let i = 0; i < dataRows.length; i += chunkSize) {
+                const chunk = dataRows.slice(i, i + chunkSize);
+                
+                chunk.forEach(row => {
+                    const record = {};
+                    let hasData = false;
+                    
+                    Object.entries(columnMapping).forEach(([sourceIndex, outputName]) => {
+                        const value = cleanValue(row[sourceIndex]);
+                        record[outputName] = value;
+                        if (value) hasData = true;
+                    });
+                    
+                    // Only add row if it has at least some data
+                    if (hasData) {
+                        rawData.push(record);
+                    }
+                });
+                
+                const progress = 30 + (i / dataRows.length) * 60;
+                updateProgress(progress, `Processed ${Math.min(i + chunkSize, dataRows.length)} / ${dataRows.length} rows`);
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+            
+            updateProgress(95, 'Finalizing...');
+            
+            closeColumnMapper();
             await initializeDashboard();
             
-            const sampleSize = parseInt(document.getElementById('sampleSize').value);
-            const displayCount = sampleSize > 0 ? Math.min(sampleSize, rawData.length) : rawData.length;
+            updateProgress(100, 'Complete!');
+            setTimeout(hideLoading, 500);
             
-            showNotification(`Loaded ${rawData.length.toLocaleString()} records (displaying ${displayCount.toLocaleString()})`, 'success');
+            showNotification(`Loaded ${rawData.length.toLocaleString()} records with ${columns.length} columns`, 'success');
+        }
+
+        function cleanValue(value) {
+            if (value === null || value === undefined || value === '') return '';
+            
+            // Convert to string and trim
+            let cleaned = String(value).trim();
+            
+            // Remove special characters that might cause issues
+            cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+            
+            // Handle common Excel formatting issues
+            if (cleaned.startsWith('="') && cleaned.endsWith('"')) {
+                cleaned = cleaned.slice(2, -1);
+            }
+            
+            return cleaned;
+        }
+
+        function showColumnMapper() {
+            if (!excelWorkbook && rawData.length > 0) {
+                // Create a simple remapping interface for already loaded data
+                showNotification('Column remapping available only during initial Excel upload', 'info');
+                return;
+            }
+            
+            if (excelWorkbook) {
+                showColumnMapperWithData();
+            } else {
+                showNotification('Please upload an Excel file first', 'warning');
+            }
+        }
+
+        function closeColumnMapper() {
+            document.getElementById('columnMapperModal').classList.remove('active');
         }
 
         function parseCSVLine(line) {
@@ -820,7 +1130,6 @@
                 return;
             }
 
-            // Convert Google Sheets URL to CSV export URL
             let csvUrl = url;
             if (url.includes('/edit')) {
                 csvUrl = url.replace('/edit#gid=', '/export?format=csv&gid=');
@@ -835,7 +1144,6 @@
             closeModal();
             await loadGoogleSheets();
             
-            // Set up auto-refresh
             const interval = parseInt(document.getElementById('refreshInterval').value);
             if (interval > 0) {
                 if (refreshIntervalId) clearInterval(refreshIntervalId);
@@ -859,7 +1167,7 @@
                 
                 updateProgress(60, 'Parsing data...');
                 const csv = await response.text();
-                await parseCSV(csv);
+                await parseCSVDirect(csv);
                 updateProgress(100, 'Complete!');
                 setTimeout(hideLoading, 500);
             } catch (error) {
@@ -906,7 +1214,6 @@
             stats.push({ label: 'Displayed', value: displayData.length.toLocaleString() });
             stats.push({ label: 'Columns', value: columns.length });
             
-            // Analyze first few columns for interesting stats
             columns.slice(0, 3).forEach(col => {
                 const values = displayData.map(r => r[col]).filter(v => v);
                 const uniqueValues = new Set(values);
@@ -1061,19 +1368,6 @@
             };
         }
 
-        function saveToStorage() {
-            try {
-                localStorage.setItem('dashboardColumns', JSON.stringify(columns));
-                localStorage.setItem('dashboardFileName', currentFileName);
-                localStorage.setItem('dashboardIsGoogleSheets', isGoogleSheets);
-                if (isGoogleSheets) {
-                    localStorage.setItem('dashboardSheetsUrl', sheetsUrl);
-                }
-            } catch (e) {
-                console.warn('LocalStorage full, data too large to save');
-            }
-        }
-
         function exportToCSV() {
             let csv = columns.map(h => `"${h}"`).join(',') + '\n';
             displayData.forEach(record => {
@@ -1107,12 +1401,14 @@
 
         function clearData() {
             if (refreshIntervalId) clearInterval(refreshIntervalId);
-            localStorage.clear();
             rawData = [];
             displayData = [];
             columns = [];
             isGoogleSheets = false;
             sheetsUrl = '';
+            excelWorkbook = null;
+            allSheetData = [];
+            columnMapping = {};
             document.getElementById('uploadSection').classList.remove('hidden');
             document.getElementById('dashboardSection').classList.add('hidden');
             fileInput.value = '';
@@ -1126,23 +1422,6 @@
             notification.style.display = 'block';
             setTimeout(() => notification.style.display = 'none', 4000);
         }
-
-        // Auto-load saved data
-        window.addEventListener('DOMContentLoaded', async () => {
-            const savedColumns = localStorage.getItem('dashboardColumns');
-            const savedFileName = localStorage.getItem('dashboardFileName');
-            const savedIsGoogleSheets = localStorage.getItem('dashboardIsGoogleSheets') === 'true';
-            const savedSheetsUrl = localStorage.getItem('dashboardSheetsUrl');
-            
-            if (savedColumns && savedFileName && savedIsGoogleSheets && savedSheetsUrl) {
-                columns = JSON.parse(savedColumns);
-                currentFileName = savedFileName;
-                isGoogleSheets = true;
-                sheetsUrl = savedSheetsUrl;
-                showNotification('Reconnecting to Google Sheets...', 'info');
-                await loadGoogleSheets();
-            }
-        });
     </script>
 </body>
 </html>
